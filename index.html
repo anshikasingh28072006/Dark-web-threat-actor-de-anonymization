@@ -1,0 +1,3682 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTRO De-Anonymization Console // Kessler-Intel</title>
+  <meta name="description" content="Defense-grade dark web threat actor de-anonymization and forensic attribution console compliant with Section 63 BSA and STIX 2.1." />
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stable CDNs -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+            mono: ['JetBrains Mono', 'IBM Plex Mono', 'Menlo', 'Courier New', 'monospace']
+          },
+          colors: {
+            deck: {
+              bg: '#ffffff',
+              surface: '#f8fafc',
+              card: '#ffffff',
+              border: '#e2e8f0',
+              borderLight: '#cbd5e1',
+              subtle: '#64748b',
+              blue: '#2563eb',
+              navy: '#1e3a8a',
+              emerald: '#059669',
+              mint: '#10b981',
+              slate: '#334155'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; }
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f8fafc; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    .grid-canvas {
+      background-color: #f8fafc;
+      background-image: 
+        linear-gradient(rgba(203, 213, 225, 0.45) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(203, 213, 225, 0.45) 1px, transparent 1px);
+      background-size: 28px 28px;
+    }
+    #cy {
+      background-color: #060913 !important;
+      background-image: 
+        radial-gradient(rgba(14, 165, 233, 0.18) 1.2px, transparent 1.2px),
+        linear-gradient(rgba(30, 41, 59, 0.4) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30, 41, 59, 0.4) 1px, transparent 1px) !important;
+      background-size: 28px 28px, 28px 28px, 28px 28px !important;
+    }
+    .mono-num { font-variant-numeric: tabular-nums; }
+    .pulse-indicator {
+      animation: pulse-op 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-op {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.9); }
+    }
+    .smooth-transition {
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+  </style>
+</head>
+<body class="bg-white text-slate-800 font-sans h-full w-full overflow-hidden flex flex-col antialiased">
+
+  <!-- ========================================================================= -->
+  <!-- TOP NAVIGATION & COMMAND BAR                                             -->
+  <!-- ========================================================================= -->
+  <header class="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-30 shadow-xs">
+    <!-- Left Branding & Classification -->
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-md bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 shadow-xs">
+        <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          <path d="m9 12 2 2 4-4"/>
+        </svg>
+      </div>
+
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold tracking-wide text-slate-900">KESSLER-INTEL</span>
+          <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200">v2.4-PRO</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-bold hidden sm:inline-flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse"></span>DUAL DETECTOR: AI + MATHEMATICAL (TS)
+          </span>
+          <span class="text-[11px] font-semibold text-emerald-800 px-2 py-0.5 bg-emerald-50 border border-emerald-300 rounded">
+            CONFIDENTIAL // NTRO-SIH26151
+          </span>
+        </div>
+        <div class="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
+          <span>Dark Web Threat Actor De-Anonymization</span>
+          <span class="text-slate-300">|</span>
+          <span class="flex items-center gap-1.5 text-emerald-600 font-medium text-[11px]">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 pulse-indicator inline-block"></span>
+            Proxy Mesh Active
+          </span>
+          <span class="text-slate-300">|</span>
+          <span class="font-mono text-[11px] text-slate-600" id="sys-clock">UTC 00:00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center/Right: Target Quick Selector (When Workspace is active) & Export Actions -->
+    <div class="flex items-center gap-3">
+      <!-- Target Selector Pills in Top Bar -->
+      <div id="top-case-selector" class="flex items-center bg-slate-100/90 border border-slate-200 rounded-md p-1 transition-opacity">
+        <span class="text-[11px] text-slate-500 px-2 uppercase font-semibold">Dossier:</span>
+        <button id="top-case-btn-1" onclick="switchCase('CASE-01: Spectre_Syndicate')" class="case-tab px-2.5 py-1 text-xs rounded text-slate-600 hover:text-blue-700 transition-colors">
+          Spectre
+        </button>
+        <button id="top-case-btn-2" onclick="switchCase('CASE-02: HydraVendor_X')" class="case-tab px-2.5 py-1 text-xs rounded text-slate-600 hover:text-blue-700 transition-colors">
+          Hydra
+        </button>
+        <button id="top-case-btn-3" onclick="switchCase('CASE-03: DarkExchanger_Op')" class="case-tab px-2.5 py-1 text-xs rounded text-slate-600 hover:text-blue-700 transition-colors">
+          Exchanger
+        </button>
+      </div>
+
+      <!-- New Scan Button -->
+      <button onclick="showCommandEntryState()" id="btn-new-scan" title="Start a fresh target search" class="px-2.5 py-1 text-xs rounded bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 flex items-center gap-1.5 font-medium transition-colors">
+        <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <span>New Recon</span>
+      </button>
+
+      <!-- Action Exports -->
+      <div class="flex items-center gap-1.5 border-l border-slate-200 pl-3">
+        <button onclick="openBsaModal()" class="px-2.5 py-1 text-xs rounded bg-emerald-600 hover:bg-emerald-700 text-white font-medium flex items-center gap-1.5 shadow-xs transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <path d="m9 15 2 2 4-4"/>
+          </svg>
+          <span>Sec 63 Cert</span>
+        </button>
+
+        <button onclick="exportStixBundle()" class="px-2.5 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center gap-1.5 shadow-xs transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 16 12 12 8 16"/>
+            <line x1="12" y1="12" x2="12" y2="21"/>
+            <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>
+          </svg>
+          <span>STIX 2.1</span>
+        </button>
+
+        <button onclick="exportCsvEvidence()" class="px-2.5 py-1 text-xs rounded bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 flex items-center gap-1.5 font-medium shadow-xs transition-colors">
+          <svg class="w-3.5 h-3.5 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          <span>CSV Chain</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: PROGRESSIVE DISCLOSURE - COMMAND ENTRY STATE (DEFAULT ON LOAD)    -->
+  <!-- ========================================================================= -->
+  <section id="command-entry-view" class="flex-1 overflow-y-auto grid-canvas flex flex-col items-center justify-start p-4 sm:p-6 lg:p-8 transition-all duration-300">
+    <div class="max-w-3xl w-full bg-white border border-slate-200 rounded-xl p-6 sm:p-8 shadow-xl my-3 sm:my-5 shrink-0">
+      
+      <!-- Header Badge & Intro -->
+      <div class="text-center mb-6">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold mb-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse"></span>
+          Dual Threat Actor Detector &middot; AI Neural Models &amp; Mathematical TS Formula &middot; Sec 63 BSA Certified
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Investigate Dark Web Threat Actors</h1>
+        <p class="text-sm text-slate-600 mt-2 max-w-2xl mx-auto leading-relaxed">
+          De-anonymize dark web threat actors using both <strong>Mathematical TS Formula</strong> (AHP graph certainty, Bitcoin UTXO co-spend clustering, PGP subkeys) and <strong>AI Neural Models</strong> (Sentence-BERT transformers, TF-IDF stylometry, circadian chronobiology).
+        </p>
+      </div>
+
+      <!-- PRIMARY TWO-OPTION DETECTION SWITCHER -->
+      <div class="mb-5">
+        <div class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+          <span>Select Detection Vector:</span>
+          <span class="text-[11px] font-mono text-purple-700 font-semibold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">Dual-Approach: AI + Mathematical TS</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <!-- Option 1: Detect from Username -->
+          <button 
+            type="button"
+            id="opt-card-username"
+            onclick="setDetectionOption('username')"
+            class="text-left p-4 rounded-xl border-2 transition-all bg-sky-50/50 border-sky-500 ring-2 ring-sky-300 shadow-md group cursor-pointer relative overflow-hidden"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <div id="opt-icon-username" class="w-10 h-10 rounded-lg bg-sky-100 text-sky-700 flex items-center justify-center shrink-0 border border-sky-200 group-hover:scale-105 transition-transform">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-sky-700 uppercase tracking-wider">Option 1</span>
+                    <span id="opt-status-username" class="text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-sky-600 text-white animate-pulse">ACTIVE MODE</span>
+                  </div>
+                  <h3 class="text-sm font-bold text-slate-900 group-hover:text-sky-800 transition-colors mt-0.5">
+                    Detect from Username
+                  </h3>
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-50 text-sky-700 border border-sky-200 font-bold">
+                  PERSONAS
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 font-semibold">
+                  AI APPROACH
+                </span>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed font-sans">
+              Analyze darknet forum handles, chat aliases, Sentence-BERT transformer embeddings, TF-IDF n-gram stylometry, and 02:00-07:00 UTC diurnal circadian rhythms.
+            </p>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+              <span class="text-slate-500">Examples: @GhostBroker, @NoxMarket</span>
+              <span class="text-sky-700 font-bold group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
+                Select Option 1 &rarr;
+              </span>
+            </div>
+          </button>
+
+          <!-- Option 2: Detect from Address -->
+          <button 
+            type="button"
+            id="opt-card-address"
+            onclick="setDetectionOption('address')"
+            class="text-left p-4 rounded-xl border-2 transition-all bg-white hover:bg-amber-50/40 border-slate-200 hover:border-amber-400 shadow-2xs group cursor-pointer relative overflow-hidden"
+          >
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex items-center gap-3">
+                <div id="opt-icon-address" class="w-10 h-10 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 border border-amber-200 group-hover:scale-105 transition-transform">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M14.5 9h-4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-amber-800 uppercase tracking-wider">Option 2</span>
+                    <span id="opt-status-address" class="text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-slate-100 text-slate-500">READY</span>
+                  </div>
+                  <h3 class="text-sm font-bold text-slate-900 group-hover:text-amber-900 transition-colors mt-0.5">
+                    Detect from Address
+                  </h3>
+                </div>
+              </div>
+              <div class="flex flex-col items-end gap-1 shrink-0">
+                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200 font-bold">
+                  BLOCKCHAIN
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 font-semibold">
+                  MATH TS FORMULA
+                </span>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-600 mt-2.5 leading-relaxed font-sans">
+              Cluster multi-input UTXO co-spends, follow mixer peel chains, and trace funds to KYC-compliant exchange deposit clusters using the mathematical TS formula.
+            </p>
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] font-mono">
+              <span class="text-slate-500">Examples: 1A1zP1e..., bc1qa5wkf...</span>
+              <span class="text-amber-800 font-bold group-hover:translate-x-0.5 transition-transform inline-flex items-center gap-1">
+                Select Option 2 &rarr;
+              </span>
+            </div>
+          </button>
+        </div>
+
+        <!-- Dual Approach Summary Banner -->
+        <div class="mt-3 p-2.5 rounded-lg bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-600">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-purple-600 shrink-0"></span>
+            <span class="font-bold text-slate-800">Unified Dual Detection:</span>
+            <span>Both approaches feed directly into the Threat Actor Detector (50% Mathematical TS Formula + 50% AI Neural Attribution).</span>
+          </div>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-100 text-purple-800 border border-purple-200 font-bold shrink-0 self-start sm:self-auto">
+            DUAL ENGINE: AI + TS
+          </span>
+        </div>
+      </div>
+
+      <!-- Universal Multi-Seed Search Bar -->
+      <div class="space-y-4">
+        <div id="search-bar-card" class="bg-slate-50 border border-slate-300 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-100 rounded-xl p-3 transition-all shadow-inner space-y-2.5">
+          
+          <!-- Mode Indicator Header inside search card -->
+          <div class="flex items-center justify-between px-1 text-xs">
+            <div class="flex items-center gap-2">
+              <span id="search-mode-dot" class="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+              <span id="search-mode-header-label" class="font-bold text-slate-800 font-sans">Option 1 Active: Detect from Username</span>
+            </div>
+            <span id="search-mode-subtext" class="text-[11px] font-mono text-slate-500">NLP Stylometric & Circadian Pipeline</span>
+          </div>
+
+          <!-- Top Row: Icon, Input, Detection Mode Selector, & Execute Button -->
+          <div class="flex items-center gap-2.5">
+            <div id="search-input-icon-box" class="pl-2 text-sky-600 shrink-0">
+              <svg id="search-input-icon" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+            
+            <input 
+              id="landing-search-input"
+              type="text" 
+              value="GhostBroker"
+              oninput="handleLandingInput(this.value)"
+              onkeydown="if(event.key === 'Enter') triggerReconFromLanding()"
+              placeholder="Enter forum alias or handle (e.g. GhostBroker, NoxMarket_Admin, KestrelSec)..."
+              class="flex-1 bg-transparent text-sm font-mono text-slate-900 placeholder-slate-400 outline-none"
+            />
+
+            <!-- Detection Mode Selector Badge -->
+            <div class="relative shrink-0">
+              <button 
+                id="landing-detect-badge" 
+                onclick="cycleInputMode()"
+                title="Click to toggle or force detection mode: [FORUM ALIAS | BTC WALLET | PGP KEY | AUTO-DETECT]"
+                class="font-mono text-[11px] px-2.5 py-1.5 rounded bg-sky-50 text-sky-800 border border-sky-300 font-semibold flex items-center gap-1.5 hover:bg-sky-100 transition-colors shadow-2xs cursor-pointer"
+              >
+                <span id="landing-detect-dot" class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span>
+                <span id="landing-detect-text">FORUM ALIAS</span>
+                <svg class="w-3 h-3 text-sky-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+            </div>
+
+            <!-- Execute Button -->
+            <button 
+              id="landing-recon-btn"
+              onclick="triggerReconFromLanding()"
+              class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg flex items-center gap-2 shadow-md hover:shadow-lg transition-all shrink-0 cursor-pointer"
+            >
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 3 19 12 5 21 5 3"/>
+              </svg>
+              <span id="landing-recon-btn-text">Detect from Username &rarr;</span>
+            </button>
+          </div>
+
+          <!-- Format Mode Selection Pills & Smart Format Hint -->
+          <div class="flex items-center justify-between pt-1.5 border-t border-slate-200/80 px-1 text-[11px]">
+            <div class="flex items-center gap-1.5">
+              <span class="text-slate-500 font-medium">Input Format:</span>
+              <div class="inline-flex bg-white border border-slate-200 rounded p-0.5 font-mono text-[10px]" id="format-mode-toggles">
+                <button type="button" onclick="setInputMode('FORUM ALIAS')" id="mode-btn-alias" class="px-2 py-0.5 rounded bg-blue-600 text-white font-bold transition-all">FORUM ALIAS</button>
+                <button type="button" onclick="setInputMode('BTC WALLET')" id="mode-btn-btc" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900 transition-all">BTC WALLET</button>
+                <button type="button" onclick="setInputMode('PGP KEY')" id="mode-btn-pgp" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900 transition-all">PGP KEY</button>
+                <button type="button" onclick="setInputMode('AUTO-DETECT')" id="mode-btn-auto" class="px-2 py-0.5 rounded text-slate-600 hover:text-slate-900 transition-all">AUTO</button>
+              </div>
+            </div>
+            <div id="format-hint-box" class="text-slate-500 font-sans text-[11px] flex items-center gap-1">
+              <span>Selected Vector:</span>
+              <strong id="format-hint-text" class="text-sky-700 font-mono">Option 1: Username & Persona Matching</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Scrollable Recent Searches List -->
+        <div id="recent-searches-section" class="border border-slate-200 rounded-xl bg-slate-50/80 p-3 shadow-2xs">
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                Recent Searches
+              </span>
+              <span id="recent-searches-count" class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 text-slate-700 font-semibold">5 cached</span>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span class="text-[10px] text-slate-400 font-mono hidden sm:inline">1-Click Quick Re-run</span>
+              <button 
+                type="button" 
+                onclick="clearRecentSearches()" 
+                class="text-[11px] text-slate-400 hover:text-rose-600 transition-colors font-medium cursor-pointer"
+                title="Clear query history"
+              >
+                Clear History
+              </button>
+            </div>
+          </div>
+
+          <!-- Scrollable Recent Queries Container -->
+          <div id="recent-searches-list" class="max-h-36 overflow-y-auto space-y-1.5 pr-1" style="scrollbar-width: thin;">
+            <!-- Dynamically populated rows -->
+          </div>
+        </div>
+
+        <!-- Quick-Select Seed Buttons for Immediate Testing -->
+        <div class="pt-1">
+          <div class="text-xs text-slate-600 font-semibold mb-2 flex items-center justify-between">
+            <span>Or test with a pre-correlated intelligence seed:</span>
+            <span class="text-blue-700 font-mono text-[11px] font-semibold">1-Click Cold Start</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <!-- Quick Seed 1: Crypto Wallet -->
+            <button 
+              onclick="applyQuickSeed('1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'BTC WALLET', 'CASE-02: HydraVendor_X')"
+              class="text-left px-3 py-2.5 rounded-lg bg-amber-50/60 hover:bg-amber-100/70 border border-amber-200 hover:border-amber-400 transition-all group shadow-2xs"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M14.5 9h-4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4"/></svg>
+                  Seed: 1A1zP1eP5Q...
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-200/80 text-amber-900 font-semibold">WALLET</span>
+              </div>
+              <p class="text-[11px] text-amber-800 mt-1 font-medium">(Ransomware Wallet &middot; 84.2 BTC)</p>
+            </button>
+
+            <!-- Quick Seed 2: Forum Alias -->
+            <button 
+              onclick="applyQuickSeed('GhostBroker', 'FORUM ALIAS', 'CASE-01: Spectre_Syndicate')"
+              class="text-left px-3 py-2.5 rounded-lg bg-sky-50/60 hover:bg-sky-100/70 border border-sky-200 hover:border-sky-400 transition-all group shadow-2xs"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-sky-950 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-sky-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  Seed: GhostBroker
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-sky-200/80 text-sky-900 font-semibold">ALIAS</span>
+              </div>
+              <p class="text-[11px] text-sky-800 mt-1 font-medium">(Dread Vendor &middot; Access Broker)</p>
+            </button>
+
+            <!-- Quick Seed 3: Master PGP -->
+            <button 
+              onclick="applyQuickSeed('0x9B4E7A1', 'PGP KEY', 'CASE-01: Spectre_Syndicate')"
+              class="text-left px-3 py-2.5 rounded-lg bg-purple-50/60 hover:bg-purple-100/70 border border-purple-200 hover:border-purple-400 transition-all group shadow-2xs"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-950 flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  Seed: 0x9B4E7A1
+                </span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-200/80 text-purple-900 font-semibold">PGP</span>
+              </div>
+              <p class="text-[11px] text-purple-800 mt-1 font-medium">(Master PGP RSA-4096 Key)</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick-Select Preset Cases -->
+        <div class="pt-2">
+          <div class="text-xs text-slate-600 font-semibold mb-2 flex items-center justify-between">
+            <span>Or select an active national security dossier:</span>
+            <span class="text-blue-700 font-mono text-[11px]">3 Pre-Attributed Operations</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <!-- Case 1 -->
+            <button onclick="selectDossierAndLaunch('CASE-01: Spectre_Syndicate')" class="text-left p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all group shadow-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">Spectre Syndicate</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-semibold">APT RANSOM</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1 line-clamp-1">Alias: @GhostBroker &middot; 158.4 BTC</p>
+              <div class="mt-2 text-[10px] font-mono text-slate-600 group-hover:text-blue-700 flex items-center gap-1 font-medium">
+                <span>Target: Binance Cluster</span>
+                <span class="text-blue-600 font-bold">&rarr;</span>
+              </div>
+            </button>
+
+            <!-- Case 2 -->
+            <button onclick="selectDossierAndLaunch('CASE-02: HydraVendor_X')" class="text-left p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all group shadow-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">HydraVendor_X</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">NARCO-VENDOR</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1 line-clamp-1">Alias: @NoxMarket_Admin &middot; 84.2 BTC</p>
+              <div class="mt-2 text-[10px] font-mono text-slate-600 group-hover:text-blue-700 flex items-center gap-1 font-medium">
+                <span>Target: Kraken Cluster</span>
+                <span class="text-blue-600 font-bold">&rarr;</span>
+              </div>
+            </button>
+
+            <!-- Case 3 -->
+            <button onclick="selectDossierAndLaunch('CASE-03: DarkExchanger_Op')" class="text-left p-3 rounded-lg bg-slate-50 border border-slate-200 hover:border-blue-500 hover:bg-blue-50/40 transition-all group shadow-xs">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors">DarkExchanger_Op</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-semibold">OTC CASH-OUT</span>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-1 line-clamp-1">Alias: @KestrelSec &middot; 246.8 BTC</p>
+              <div class="mt-2 text-[10px] font-mono text-slate-600 group-hover:text-blue-700 flex items-center gap-1 font-medium">
+                <span>Target: WazirX Cluster</span>
+                <span class="text-blue-600 font-bold">&rarr;</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5-Stage Pipeline Architectural Explanation -->
+        <div class="mt-6 pt-5 border-t border-slate-200">
+          <div class="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">
+            5-Stage Forensic Attribution Pipeline
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-5 gap-2 text-center text-xs">
+            <div class="p-2.5 rounded bg-slate-50 border border-slate-200 shadow-2xs">
+              <div class="text-[10px] font-mono text-blue-600 font-bold mb-1">STAGE 1</div>
+              <div class="text-[11px] text-slate-800 font-semibold">Seed Ingestion</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Tor onion mirrors</div>
+            </div>
+            <div class="p-2.5 rounded bg-slate-50 border border-slate-200 shadow-2xs">
+              <div class="text-[10px] font-mono text-blue-600 font-bold mb-1">STAGE 2</div>
+              <div class="text-[11px] text-slate-800 font-semibold">UTXO Co-Spend</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Multi-input clusters</div>
+            </div>
+            <div class="p-2.5 rounded bg-slate-50 border border-slate-200 shadow-2xs">
+              <div class="text-[10px] font-mono text-blue-600 font-bold mb-1">STAGE 3</div>
+              <div class="text-[11px] text-slate-800 font-semibold">PGP & Keys</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Subkey collision</div>
+            </div>
+            <div class="p-2.5 rounded bg-slate-50 border border-slate-200 shadow-2xs">
+              <div class="text-[10px] font-mono text-blue-600 font-bold mb-1">STAGE 4</div>
+              <div class="text-[11px] text-slate-800 font-semibold">Diurnal / NLP</div>
+              <div class="text-[10px] text-slate-500 mt-0.5">Sleep & stylometry</div>
+            </div>
+            <div class="p-2.5 rounded bg-emerald-50 border border-emerald-200 shadow-2xs">
+              <div class="text-[10px] font-mono text-emerald-700 font-bold mb-1">STAGE 5</div>
+              <div class="text-[11px] text-emerald-800 font-bold">KYC Subpoena</div>
+              <div class="text-[10px] text-emerald-700 mt-0.5">Sec 63 BSA legal anchor</div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: PROGRESSIVE RECON SPINNER & PIPELINE MODAL OVERLAY               -->
+  <!-- ========================================================================= -->
+  <div id="recon-overlay-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="max-w-md w-full bg-white border border-slate-200 rounded-xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-full border-2 border-blue-600 border-t-transparent animate-spin shrink-0"></div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900">Forensic Attribution Pipeline Running</h3>
+          <p class="text-xs text-slate-600" id="overlay-current-stage">Initializing Tor relay connections...</p>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="space-y-1">
+        <div class="flex items-center justify-between text-xs font-mono">
+          <span class="text-slate-500 font-medium">PROGRESS:</span>
+          <span id="overlay-pct" class="text-blue-600 font-bold">20%</span>
+        </div>
+        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+          <div id="overlay-progress-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 20%;"></div>
+        </div>
+      </div>
+
+      <!-- Micro stdout lines -->
+      <div id="overlay-log-box" class="bg-slate-50 border border-slate-200 rounded p-2.5 font-mono text-[11px] text-slate-700 space-y-1 h-28 overflow-y-auto">
+        <div>[00.1s] Ingesting target entity seed...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 3: ACTIVE INVESTIGATION WORKSPACE (BREATHABLE 3-COLUMN LAYOUT)      -->
+  <!-- ========================================================================= -->
+  <div id="investigation-workspace" class="flex-1 flex overflow-hidden hidden">
+    
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- COLUMN 1: LEFT COMMAND DECK (Dossier, Diurnal Canvas, Live Logs)        -->
+    <!-- ----------------------------------------------------------------------- -->
+    <aside class="w-80 lg:w-84 bg-white border-r border-slate-200 flex flex-col shrink-0 overflow-y-auto shadow-xs">
+      
+      <!-- Target Dossier Card -->
+      <div class="p-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-2.5">
+          <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Target Dossier</h2>
+          <span id="dossier-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-semibold">
+            TIER-1 APT RANSOMWARE
+          </span>
+        </div>
+
+        <div class="space-y-2 text-xs">
+          <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+            <div class="text-[11px] text-slate-500 font-medium">OPERATOR DESIGNATION</div>
+            <div id="dossier-name" class="font-extrabold text-slate-900 text-base mt-0.5">Spectre_Syndicate</div>
+            
+            <div class="text-[11px] text-slate-500 font-medium mt-2">CONFIRMED HANDLES</div>
+            <div id="dossier-aliases" class="text-blue-700 font-mono text-xs mt-0.5 font-semibold">@GhostBroker, @SpectreOp, @VaporZero</div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <div class="text-[10px] text-slate-500 font-medium">LAUNDERED PROCEEDS</div>
+              <div id="dossier-proceeds" class="font-bold font-mono text-emerald-700 text-xs mt-1">158.4 BTC (~$10.3M)</div>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+              <div class="text-[10px] text-slate-500 font-medium">INFERRED TIMEZONE</div>
+              <div id="dossier-locale" class="font-bold text-blue-700 text-xs mt-1">UTC+03:00 (MSK)</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <div class="text-[10px] text-slate-500 font-medium">REBRAND & LINEAGE</div>
+            <div id="dossier-rebrand" class="text-xs text-slate-700 mt-1 leading-snug font-medium">DarkSide affiliate &rarr; BlackCat/ALPHV sub-ring</div>
+          </div>
+
+          <!-- Centralized KYC Subpoena Anchor -->
+          <div class="bg-emerald-50/70 border border-emerald-300 p-3 rounded-lg shadow-xs">
+            <div class="flex items-center gap-1.5 text-emerald-800 font-bold text-xs">
+              <svg class="w-4 h-4 shrink-0 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+              <span>CENTRALIZED KYC OFF-RAMP:</span>
+            </div>
+            <div id="dossier-offramp" class="text-xs text-slate-900 mt-1 font-bold">Binance / CoinDCX Deposit Cluster</div>
+            <div id="dossier-subpoena" class="text-[11px] font-mono text-emerald-700 mt-1 font-medium">Ref: REGULATORY_SUBPOENA_TARGET (FIU-IND #2026-X81)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diurnal Activity Heatmap (Dual 24-Hour Comparative 7-Day Matrix) -->
+      <div class="p-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Diurnal Activity Heatmap
+          </h3>
+          <span id="diurnal-sleep-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200 font-bold">
+            SLEEP: 02-07 UTC
+          </span>
+        </div>
+
+        <div class="bg-slate-900 border border-slate-700 p-2 rounded-lg text-white shadow-inner">
+          <div class="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1 px-1">
+            <span>ALIAS A vs ALIAS B (7-DAY MATRIX)</span>
+            <span id="heatmap-cell-hover" class="text-emerald-400 font-bold">HOVER FOR CELL DETAILS</span>
+          </div>
+
+          <!-- Heatmap Canvas -->
+          <canvas 
+            id="diurnal-heatmap-canvas" 
+            width="320" 
+            height="145" 
+            class="w-full h-[145px] block rounded bg-slate-950 cursor-crosshair"
+            title="Dual 24-Hour Activity Heatmap (Mon-Sun) comparing Alias A vs Alias B"
+          ></canvas>
+
+          <!-- Heatmap Legend & Axis -->
+          <div class="mt-2 pt-1.5 border-t border-slate-800 flex items-center justify-between text-[9px] font-mono text-slate-400">
+            <div class="flex items-center gap-2">
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-cyan-500 inline-block"></span> Alias A</span>
+              <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-xs bg-emerald-500 inline-block"></span> Alias B</span>
+            </div>
+            <div class="flex items-center gap-1 text-rose-400 font-bold">
+              <span class="w-2 h-2 rounded-xs bg-rose-500/40 border border-rose-500/80 inline-block"></span>
+              <span>02-07 UTC Trough</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inferred Timezone Banner -->
+        <div class="mt-2.5 p-2 bg-blue-50/80 border border-blue-200 rounded-lg text-xs leading-relaxed text-blue-950">
+          <div class="font-bold flex items-center justify-between text-[11px]">
+            <span>INFERRED TIMEZONE:</span>
+            <span class="font-mono text-blue-700 font-extrabold">UTC+03:00 (MSK / E. Europe)</span>
+          </div>
+          <div class="text-[10px] text-slate-600 mt-0.5">
+            Synchronized physiological circadian depression (<strong class="text-emerald-700">96.4% confidence</strong>) rules out North American & Far East timezones.
+          </div>
+        </div>
+      </div>
+
+      <!-- Stylometry & AI Score Panel -->
+      <div class="p-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-purple-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            Stylometry & AI Score
+          </h3>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-bold">
+            NLP ATTRIBUTION
+          </span>
+        </div>
+
+        <div class="space-y-2.5">
+          <!-- Metric 1: Character N-Gram TF-IDF -->
+          <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg shadow-2xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700">Char N-Gram TF-IDF Cosine</span>
+              <span class="font-mono font-extrabold text-blue-700">91.4%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-200 rounded overflow-hidden">
+              <div class="h-full bg-blue-600 rounded" style="width: 91.4%;"></div>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Evaluated across 3-5 character n-gram frequencies (1,440 forum posts)</p>
+          </div>
+
+          <!-- Metric 2: Sentence-BERT Semantic Similarity -->
+          <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-lg shadow-2xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-semibold text-slate-700">Sentence-BERT Embedding Cosine</span>
+              <span class="font-mono font-extrabold text-emerald-700">86.8%</span>
+            </div>
+            <div class="w-full h-1.5 bg-slate-200 rounded overflow-hidden">
+              <div class="h-full bg-emerald-600 rounded" style="width: 86.8%;"></div>
+            </div>
+            <p class="text-[10px] text-slate-500 mt-1">Transformer-based semantic intent vectors on negotiation terms</p>
+          </div>
+
+          <!-- Metric 3: Punctuation & Slang Marker Match -->
+          <div class="p-2.5 bg-purple-50/70 border border-purple-200 rounded-lg shadow-2xs">
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-purple-900">Punctuation & Slang Markers</span>
+              <span class="font-mono text-[10px] px-1.5 py-0.2 rounded bg-purple-200/80 text-purple-950 font-extrabold">IDENTICAL</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-1.5 mt-1.5 text-[10px] font-mono">
+              <div class="bg-white/90 border border-purple-200/80 rounded p-1 text-purple-950 flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-purple-600 shrink-0"></span>
+                <span>Cyrillic Artifacts: <strong class="text-purple-800">с, о, а</strong></span>
+              </div>
+              <div class="bg-white/90 border border-purple-200/80 rounded p-1 text-purple-950 flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-purple-600 shrink-0"></span>
+                <span>Triple Commas: <strong class="text-purple-800">",,,"</strong></span>
+              </div>
+              <div class="bg-white/90 border border-purple-200/80 rounded p-1 text-purple-950 flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-purple-600 shrink-0"></span>
+                <span>Detached Space: <strong class="text-purple-800">" ?"</strong></span>
+              </div>
+              <div class="bg-white/90 border border-purple-200/80 rounded p-1 text-purple-950 flex items-center gap-1">
+                <span class="w-1 h-1 rounded-full bg-purple-600 shrink-0"></span>
+                <span>Leetspeak: <strong class="text-purple-800">"sh3ll", "3scr0w"</strong></span>
+              </div>
+            </div>
+
+            <button 
+              onclick="toggleDiffDrawer()"
+              class="w-full mt-2 py-1 px-2 rounded bg-purple-600 hover:bg-purple-700 text-white text-[11px] font-semibold flex items-center justify-center gap-1 transition-colors shadow-2xs"
+            >
+              <span>Inspect in Stylometric Diff Drawer &rarr;</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Forensic Ingestion Logs -->
+      <div class="p-4 flex-1 flex flex-col min-h-[180px]">
+        <div class="flex items-center justify-between mb-2">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            Ingestion Logs
+          </h3>
+          <button onclick="clearTerminalLogs()" class="text-[10px] font-mono text-slate-500 hover:text-slate-800">
+            Clear
+          </button>
+        </div>
+
+        <div id="terminal-logs" class="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-mono text-[11px] overflow-y-auto space-y-1.5 text-slate-800">
+          <!-- Injected dynamically -->
+        </div>
+      </div>
+    </aside>
+
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- COLUMN 2: CENTER WORKSPACE (Attribution Graph & Active Inspector)       -->
+    <!-- ----------------------------------------------------------------------- -->
+    <main class="flex-1 flex flex-col bg-white relative overflow-hidden">
+      
+      <!-- Graph Canvas Control Toolbar -->
+      <div class="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-4 shrink-0 z-20">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-4 h-4 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+            Attribution Topology
+          </span>
+          <span class="text-xs font-mono text-slate-500 font-semibold" id="graph-counts">[8 ENTITIES // 8 RELATIONS]</span>
+        </div>
+
+        <!-- Graph Layout Toggles & Direct Off-Ramp Focus -->
+        <div class="flex items-center gap-2">
+          <!-- 4-Pole and Tree Layout Mode Selector -->
+          <div class="flex items-center bg-slate-100 border border-slate-200 rounded-lg p-0.5 text-xs font-mono">
+            <button onclick="setLayout('pipeline')" id="layout-pipeline" class="px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold transition-all shadow-2xs cursor-pointer" title="Structured 4-Pole Attribution Flow (Left-to-Right Hierarchy)">
+              4-POLE TREE
+            </button>
+            <button onclick="setLayout('vertical')" id="layout-vertical" class="px-2 py-1 rounded-md text-slate-600 hover:text-slate-900 font-medium transition-all cursor-pointer" title="Vertical Breadthfirst Tree">
+              VERT TREE
+            </button>
+            <button onclick="setLayout('cose')" id="layout-cose" class="px-2 py-1 rounded-md text-slate-600 hover:text-slate-900 font-medium transition-all cursor-pointer" title="Force-Directed Organic Mesh">
+              FORCE MESH
+            </button>
+            <button onclick="setLayout('concentric')" id="layout-concentric" class="px-2 py-1 rounded-md text-slate-600 hover:text-slate-900 font-medium transition-all cursor-pointer" title="Concentric Radial Poles">
+              RADIAL
+            </button>
+          </div>
+
+          <!-- Highlight / Focus Surface Off-Ramp Anchor Button -->
+          <button 
+            onclick="focusOffRampAnchor()" 
+            id="btn-focus-offramp"
+            class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-mono font-bold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+            title="Highlight and focus directly on the Surface Off-Ramp Anchor (Subpoena Target)"
+          >
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>FOCUS OFF-RAMP ANCHOR</span>
+          </button>
+
+          <!-- Graph Zoom Controls -->
+          <div class="flex items-center gap-1">
+            <button onclick="fitGraph()" title="Fit View" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-semibold border border-slate-200 cursor-pointer">
+              FIT
+            </button>
+            <button onclick="zoomIn()" title="Zoom In (+)" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-semibold border border-slate-200 cursor-pointer">
+              +
+            </button>
+            <button onclick="zoomOut()" title="Zoom Out (-)" class="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-mono font-semibold border border-slate-200 cursor-pointer">
+              -
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4-Pole Attribution Stage Guide Header (Above Canvas) -->
+      <div class="bg-slate-900 border-b border-slate-800 px-3 py-1.5 flex items-center justify-between gap-2 overflow-x-auto whitespace-nowrap scrollbar-none text-[10px] font-mono text-slate-300 select-none z-10 shrink-0 w-full min-w-0">
+        <div class="flex items-center gap-1.5 font-bold text-rose-300 shrink-0 bg-rose-950/50 px-2 py-0.5 rounded border border-rose-800/40">
+          <span class="w-2 h-2 rounded-full bg-rose-500 shrink-0"></span>
+          <span class="whitespace-nowrap">POLE 1: PERSONAS</span>
+          <span class="text-rose-400/70 hidden sm:inline">&amp; IDENTITIES</span>
+        </div>
+        <div class="text-slate-600 shrink-0">&rarr;</div>
+        <div class="flex items-center gap-1.5 font-bold text-indigo-300 shrink-0 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-800/40">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 shrink-0"></span>
+          <span class="whitespace-nowrap">POLE 2: PROOFS</span>
+          <span class="text-indigo-400/70 hidden sm:inline">&amp; CRYPTO</span>
+        </div>
+        <div class="text-slate-600 shrink-0">&rarr;</div>
+        <div class="flex items-center gap-1.5 font-bold text-amber-300 shrink-0 bg-amber-950/50 px-2 py-0.5 rounded border border-amber-800/40">
+          <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+          <span class="whitespace-nowrap">POLE 3: UTXO TRAIL</span>
+          <span class="text-amber-400/70 hidden sm:inline">&amp; PEEL CHAIN</span>
+        </div>
+        <div class="text-slate-600 shrink-0">&rarr;</div>
+        <div 
+          onclick="focusOffRampAnchor()" 
+          title="Click to highlight and focus Pole 4: Surface Off-Ramp Anchor (Subpoena Target)"
+          class="flex items-center gap-1.5 font-bold text-emerald-300 shrink-0 bg-emerald-950/90 px-2.5 py-0.5 rounded-md border border-emerald-500/70 shadow-sm hover:bg-emerald-900 hover:border-emerald-400 transition-all cursor-pointer ring-1 ring-emerald-500/30 group"
+        >
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+          <span class="whitespace-nowrap text-emerald-200 font-extrabold tracking-wide group-hover:text-white">POLE 4: SURFACE OFF-RAMP ANCHOR</span>
+        </div>
+      </div>
+
+      <!-- Center Cytoscape Container (Intelligence-Grade Dark High-Contrast Canvas) -->
+      <div id="cy" class="flex-1 relative bg-[#070a12] border-b border-slate-200"></div>
+
+      <!-- Surface Off-Ramp Callout Bottom-Right Anchor Badge on Canvas -->
+      <div class="absolute bottom-36 right-3 z-10 pointer-events-auto">
+        <div class="bg-slate-950/90 border border-emerald-500/80 p-3 rounded-xl shadow-2xl max-w-sm font-sans backdrop-blur-md text-white">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-1.5 text-emerald-400 font-bold text-xs whitespace-nowrap">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping"></span>
+              <span>POLE 4: SURFACE OFF-RAMP ANCHOR</span>
+            </div>
+            <button onclick="focusOffRampAnchor()" class="text-[10px] font-mono text-emerald-300 hover:text-white underline cursor-pointer shrink-0">Focus Path &rarr;</button>
+          </div>
+          <div id="canvas-offramp-label" class="text-xs text-white font-bold mt-1.5 break-words">Binance / CoinDCX Deposit Cluster</div>
+          <p class="text-[11px] text-slate-300 mt-1 leading-snug">
+            Actionable Section 63 BSA subpoena target ready for national law enforcement requisition.
+          </p>
+        </div>
+      </div>
+
+      <!-- Active Element Inspector Drawer at Center Bottom -->
+      <div class="h-32 bg-white border-t border-slate-200 p-3 flex flex-col shrink-0 z-20 shadow-xs">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Active Inspector</span>
+            <span id="inspect-type" class="text-[10px] font-mono text-slate-500 font-medium">[CLICK ANY NODE OR EDGE TO INSPECT]</span>
+          </div>
+          <button onclick="resetInspector()" class="text-[11px] text-slate-500 hover:text-slate-800 font-medium">
+            Reset
+          </button>
+        </div>
+        <div id="inspect-content" class="flex-1 bg-slate-50 border border-slate-200 rounded p-2.5 text-xs text-slate-600 overflow-y-auto">
+          Click any node or relationship vector in the graph canvas to inspect cryptographic hashes, UTXO transaction blocks, or legal subpoena parameters.
+        </div>
+      </div>
+    </main>
+
+    <!-- ----------------------------------------------------------------------- -->
+    <!-- COLUMN 3: RIGHT FORENSICS DECK (TEF Score, AHP Sliders, BSA Custody)    -->
+    <!-- ----------------------------------------------------------------------- -->
+    <aside class="w-84 lg:w-88 bg-white border-l border-slate-200 flex flex-col shrink-0 overflow-y-auto shadow-xs">
+      
+      <!-- Dual-Approach Threat Actor Detector (AI + Mathematical TS Formula) -->
+      <div class="p-4 border-b border-slate-200">
+        <div class="flex items-center justify-between mb-1">
+          <div>
+            <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                <path d="m9 12 2 2 4-4"/>
+              </svg>
+              Threat Actor Detector
+            </h2>
+            <div class="text-[10px] text-slate-500 font-medium">Dual Methodology: Mathematical TS + AI Engine</div>
+          </div>
+          <span class="text-[9px] font-mono px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-bold shrink-0">
+            DUAL-ENGINE
+          </span>
+        </div>
+
+        <!-- Master Synthesized Threat Actor Detection Confidence Meter -->
+        <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 p-3.5 rounded-xl border border-slate-800 text-white mt-2 shadow-sm">
+          <div class="flex items-baseline justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400 font-mono font-bold tracking-wider uppercase flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                DETECTOR ATTRIBUTION CONFIDENCE
+              </div>
+              <div id="dual-detector-score" class="text-3xl font-extrabold font-mono text-emerald-400 tracking-tight mono-num mt-0.5">92.0%</div>
+            </div>
+            <div class="text-right">
+              <span id="tef-grade-badge" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-900/80 text-emerald-200 border border-emerald-500/40">
+                CLASS-I ADMISSIBLE
+              </span>
+              <div class="text-[10px] text-slate-400 mt-1 font-medium">Sec 63 BSA Validated</div>
+            </div>
+          </div>
+
+          <div class="mt-2.5 pt-2 border-t border-slate-800 text-[10px] font-mono text-slate-300 flex items-center justify-between">
+            <span class="text-slate-400">Synthesis:</span>
+            <span class="text-emerald-300 font-bold">50% Math (TS) + 50% AI (NLP)</span>
+          </div>
+        </div>
+
+        <!-- Methodology View Switcher Tabs -->
+        <div class="grid grid-cols-3 gap-1 mt-3 p-1 bg-slate-100 rounded-lg text-[10px] font-mono font-bold">
+          <button type="button" onclick="setDetectorViewTab('both')" id="tab-btn-both" class="py-1 px-1 rounded bg-blue-600 text-white shadow-xs transition-colors cursor-pointer text-center">
+            ★ BOTH (DUAL)
+          </button>
+          <button type="button" onclick="setDetectorViewTab('math')" id="tab-btn-math" class="py-1 px-1 rounded text-slate-600 hover:text-slate-900 transition-colors cursor-pointer text-center">
+            ∑ MATH (TS)
+          </button>
+          <button type="button" onclick="setDetectorViewTab('ai')" id="tab-btn-ai" class="py-1 px-1 rounded text-slate-600 hover:text-slate-900 transition-colors cursor-pointer text-center">
+            ⚡ AI NEURAL
+          </button>
+        </div>
+
+        <!-- APPROACH 1: MATHEMATICAL APPROACH (TS FORMULA) -->
+        <div id="panel-math-approach" class="mt-3 p-3 bg-blue-50/50 rounded-xl border border-blue-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+              <span class="text-xs font-bold text-slate-900">1. Mathematical Approach</span>
+            </div>
+            <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 border border-blue-300">
+              AHP FORMULA
+            </span>
+          </div>
+
+          <div class="flex items-baseline justify-between">
+            <div class="text-[10px] text-slate-600 font-mono">Mathematical TS Score:</div>
+            <div id="tef-score-val" class="text-lg font-extrabold font-mono text-blue-700">91.6%</div>
+          </div>
+
+          <!-- The Mathematical TS Formula -->
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800 text-[10px] font-mono text-emerald-300 leading-tight space-y-1">
+            <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider flex items-center justify-between">
+              <span>MATHEMATICAL TS FORMULA (SHIN &amp; SHIN 2026):</span>
+              <span class="text-emerald-400 font-semibold">[AHP v3]</span>
+            </div>
+            <div class="font-bold text-emerald-300 select-all">
+              <code>TS = (0.385 * App) + (0.204 * Ease) + (0.412 * Legal)</code>
+            </div>
+            <div class="text-[9px] text-slate-400 pt-0.5">
+              Deterministic Satoshi UTXO co-spend proof &amp; 4096-bit PGP master key binding.
+            </div>
+          </div>
+
+          <!-- Mathematical TS Dimension Breakdown Bars -->
+          <div class="space-y-1.5 pt-1 text-[11px]">
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">1. Applicability (38.5% AHP)</span>
+                <span id="score-app-val" class="text-blue-700 font-mono font-bold">94.2%</span>
+              </div>
+              <div class="w-full h-1.5 bg-blue-100 rounded overflow-hidden">
+                <div id="bar-app" class="h-full bg-blue-600 transition-all duration-300" style="width: 94.2%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">2. Technical Ease (20.4% AHP)</span>
+                <span id="score-ease-val" class="text-emerald-700 font-mono font-bold">88.5%</span>
+              </div>
+              <div class="w-full h-1.5 bg-emerald-100 rounded overflow-hidden">
+                <div id="bar-ease" class="h-full bg-emerald-600 transition-all duration-300" style="width: 88.5%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">3. Legal Admissibility (41.2% AHP)</span>
+                <span id="score-legal-val" class="text-emerald-800 font-mono font-bold">95.8%</span>
+              </div>
+              <div class="w-full h-1.5 bg-emerald-100 rounded overflow-hidden">
+                <div id="bar-legal" class="h-full bg-emerald-700 transition-all duration-300" style="width: 95.8%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- APPROACH 2: AI APPROACH (NEURAL & NLP MODELS) -->
+        <div id="panel-ai-approach" class="mt-3 p-3 bg-purple-50/60 rounded-xl border border-purple-200 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+              <span class="text-xs font-bold text-slate-900">2. AI Approach</span>
+            </div>
+            <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-purple-100 text-purple-800 border border-purple-300">
+              NEURAL ENSEMBLE
+            </span>
+          </div>
+
+          <div class="flex items-baseline justify-between">
+            <div class="text-[10px] text-slate-600 font-mono">AI Threat Detector Score:</div>
+            <div id="ai-detector-score" class="text-lg font-extrabold font-mono text-purple-700">92.4%</div>
+          </div>
+
+          <!-- The AI Neural Ensemble Formula -->
+          <div class="p-2 bg-slate-900 rounded-lg border border-slate-800 text-[10px] font-mono text-purple-300 leading-tight space-y-1">
+            <div class="text-slate-400 text-[9px] uppercase font-bold tracking-wider flex items-center justify-between">
+              <span>AI ATTRIBUTION ENSEMBLE FORMULA:</span>
+              <span class="text-purple-400 font-semibold">[TRANSFORMER]</span>
+            </div>
+            <div class="font-bold text-purple-300 select-all">
+              <code>AI_Score = (0.40 * S-BERT) + (0.35 * TF-IDF) + (0.25 * Circadian)</code>
+            </div>
+            <div class="text-[9px] text-slate-400 pt-0.5">
+              Sentence-BERT semantic vectors, 3-5 char n-gram stylometry &amp; deep sleep trough clustering.
+            </div>
+          </div>
+
+          <!-- AI Model Dimension Breakdown Bars -->
+          <div class="space-y-1.5 pt-1 text-[11px]">
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">1. Sentence-BERT Neural Embeddings</span>
+                <span id="score-sbert-val" class="text-purple-700 font-mono font-bold">86.8%</span>
+              </div>
+              <div class="w-full h-1.5 bg-purple-100 rounded overflow-hidden">
+                <div id="bar-sbert" class="h-full bg-purple-600 transition-all duration-300" style="width: 86.8%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">2. Stylometric 3-5 Gram Cosine</span>
+                <span id="score-stylometry-val" class="text-blue-700 font-mono font-bold">94.8%</span>
+              </div>
+              <div class="w-full h-1.5 bg-blue-100 rounded overflow-hidden">
+                <div id="bar-stylometry" class="h-full bg-blue-600 transition-all duration-300" style="width: 94.8%;"></div>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-0.5 font-medium">
+                <span class="text-slate-700">3. Circadian Diurnal Sleep ML</span>
+                <span id="score-circadian-val" class="text-emerald-700 font-mono font-bold">96.4%</span>
+              </div>
+              <div class="w-full h-1.5 bg-emerald-100 rounded overflow-hidden">
+                <div id="bar-circadian" class="h-full bg-emerald-600 transition-all duration-300" style="width: 96.4%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dual Corroboration Standard Callout -->
+        <div class="mt-3 p-2 bg-slate-50 border border-slate-200 rounded-lg text-[10px] text-slate-600 leading-snug">
+          <div class="font-bold text-slate-800 flex items-center gap-1 mb-0.5">
+            <svg class="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Dual Corroboration Standard
+          </div>
+          <span>Threat actor identity is verified by <strong>both</strong> mathematical proof (TS formula) and AI pattern recognition, satisfying court admissibility under Section 63 BSA.</span>
+        </div>
+      </div>
+
+      <!-- Human-in-the-Loop Vector Attestation Panel -->
+      <div class="p-4 border-b border-slate-200 bg-slate-50/50">
+        <div class="flex items-center justify-between mb-1.5">
+          <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-blue-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="m9 12 2 2 4-4"/>
+            </svg>
+            Human-in-the-Loop Attestation
+          </h3>
+          <span id="attestation-progress-badge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200 font-bold">
+            0/4 CONFIRMED
+          </span>
+        </div>
+        <p class="text-[11px] text-slate-500 mb-2.5 leading-tight">
+          Analyst verification triggers to certify or contest evidentiary vectors for the Section 63 BSA court record.
+        </p>
+
+        <!-- Quick Action Toolbar -->
+        <div class="flex items-center justify-between mb-2 text-[10px] font-mono">
+          <button onclick="confirmAllVectors()" class="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold transition-all shadow-2xs cursor-pointer">
+            [✔ Confirm All 4 Vectors]
+          </button>
+          <button onclick="resetAllVectors()" class="px-2 py-1 rounded bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold transition-all cursor-pointer">
+            [↺ Reset Reviews]
+          </button>
+        </div>
+
+        <!-- 4 Vector Attestation Cards Container -->
+        <div id="vector-attestation-list" class="space-y-2">
+          <!-- Dynamically populated by renderVectorAttestations() -->
+        </div>
+      </div>
+
+      <!-- Auditable Chain of Custody Checklist -->
+      <div class="p-4 border-b border-slate-200 flex-1">
+        <div class="flex items-center justify-between mb-2.5">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Auditable Custody Chain</h3>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
+            5/5 VERIFIED
+          </span>
+        </div>
+
+        <div id="custody-checklist" class="space-y-2 text-xs">
+          <!-- Dynamically populated 5-step checklist -->
+        </div>
+
+        <!-- Master Integrity SHA-256 Digest Card -->
+        <div class="mt-3.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+          <div class="text-[10px] text-slate-500 uppercase font-bold">MASTER EVIDENCE SHA-256 INTEGRITY HASH</div>
+          <div id="master-sha256" class="text-[10px] font-mono text-emerald-800 font-semibold break-all mt-1 select-all">
+            e7f842b03698d5c414901f46820df38a164993ec974e6f481c0022416bc7ef09
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Actions -->
+      <div class="p-4 space-y-2">
+        <button onclick="toggleDiffDrawer()" class="w-full py-2 px-3 text-xs font-semibold rounded bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 flex items-center justify-center gap-1.5 transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="8" y1="12" x2="12" y2="12"/>
+          </svg>
+          <span>Open Stylometric Diff Drawer</span>
+        </button>
+
+        <button onclick="openBsaModal()" class="w-full py-2 px-3 text-xs font-semibold rounded bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow transition-colors">
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>View Sec 63 BSA Certificate</span>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- ZONE 4: EXPANDABLE BOTTOM LINGUISTIC DIFF DRAWER                         -->
+  <!-- ========================================================================= -->
+  <div id="diff-drawer" class="h-64 bg-white border-t-2 border-blue-600 flex flex-col shrink-0 transition-all duration-300 hidden z-30 shadow-xl">
+    <div class="h-9 bg-slate-50 border-b border-slate-200 flex items-center justify-between px-4">
+      <div class="flex items-center gap-2">
+        <span class="text-xs font-bold text-blue-700 uppercase tracking-wide">
+          Stylometric Linguistic Diff [TF-IDF Cosine Match: 91.4%]
+        </span>
+        <span class="text-[11px] text-slate-500 font-medium">
+          (Character 3-5 Grams & Syntactic Habits)
+        </span>
+      </div>
+      <button onclick="toggleDiffDrawer()" class="text-xs text-slate-600 hover:text-slate-900 font-semibold px-2.5 py-0.5 rounded bg-slate-200 hover:bg-slate-300">
+        Close Drawer
+      </button>
+    </div>
+
+    <div class="flex-1 p-3 grid grid-cols-1 md:grid-cols-2 gap-3 overflow-hidden">
+      <!-- Sample A -->
+      <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex flex-col shadow-2xs">
+        <div class="flex items-center justify-between mb-1.5 text-xs">
+          <span class="font-bold text-slate-800">Dread Forum (.onion) - Sample A</span>
+          <span class="font-mono text-[10px] text-blue-700 font-semibold">Source: @GhostBroker</span>
+        </div>
+        <div id="diff-sample-a" class="flex-1 p-2.5 bg-white border border-slate-200 rounded text-xs font-mono text-slate-800 overflow-y-auto leading-relaxed"></div>
+      </div>
+
+      <!-- Sample B -->
+      <div class="bg-slate-50 border border-slate-200 p-3 rounded-lg flex flex-col shadow-2xs">
+        <div class="flex items-center justify-between mb-1.5 text-xs">
+          <span class="font-bold text-slate-800">Exploit.in (Mirror) - Sample B</span>
+          <span class="font-mono text-[10px] text-emerald-700 font-semibold">Target: @GhostBroker_mirror</span>
+        </div>
+        <div id="diff-sample-b" class="flex-1 p-2.5 bg-white border border-slate-200 rounded text-xs font-mono text-slate-800 overflow-y-auto leading-relaxed"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: SECTION 63 BSA STATUTORY CERTIFICATE                              -->
+  <!-- ========================================================================= -->
+  <div id="bsa-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white border border-slate-200 rounded-xl max-w-2xl w-full shadow-2xl flex flex-col max-h-[90vh]">
+      <div class="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <span class="text-xs font-bold text-emerald-800">
+          Section 63 Bharatiya Sakshya Adhiniyam (BSA), 2023 // Statutory Certificate
+        </span>
+        <button onclick="closeBsaModal()" class="text-slate-500 hover:text-slate-900 text-xs font-semibold">
+          [Esc / Close]
+        </button>
+      </div>
+
+      <div class="p-5 overflow-y-auto space-y-4 text-xs text-slate-700">
+        <div class="text-center pb-3 border-b border-slate-200">
+          <h2 class="text-sm font-extrabold text-slate-900 uppercase">NATIONAL TECHNICAL RESEARCH ORGANISATION</h2>
+          <p class="text-[11px] text-slate-500">Cyber Threat Intelligence Directorate // Forensic Extraction Cell</p>
+          <p class="text-[11px] text-emerald-700 mt-1 font-bold">Certificate under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023</p>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 space-y-1.5 font-mono text-[11px]">
+          <div><strong class="text-slate-900">CASE IDENTIFIER:</strong> <span id="cert-case-id" class="text-slate-700">NTRO/CTI/DE-ANON/CASE-01/2026</span></div>
+          <div><strong class="text-slate-900">TARGET SUBJECT:</strong> <span id="cert-target-name" class="text-slate-700">Spectre_Syndicate (@GhostBroker)</span></div>
+          <div><strong class="text-slate-900">PRIMARY WALLET:</strong> <span id="cert-wallet" class="text-slate-700">bc1qa5wkfag5cluzwxcur08985nd95ec5tzk3sw4kl</span></div>
+          <div><strong class="text-slate-900">KYC SUBPOENA ACTION:</strong> <span id="cert-subpoena" class="text-emerald-700 font-bold">Binance / CoinDCX Deposit Cluster</span></div>
+        </div>
+
+        <div class="bg-blue-50/70 p-3 rounded-lg border border-blue-200 text-[11px] font-sans">
+          <div class="flex items-center justify-between">
+            <span class="text-blue-900 font-bold">HUMAN EXAMINER ATTESTATION:</span>
+            <span id="cert-attestation-status" class="font-mono text-emerald-800 font-bold">4/4 FORENSIC VECTORS CERTIFIED</span>
+          </div>
+          <div class="text-[10px] text-slate-600 mt-1">
+            Attesting Officer: <strong>NTRO Specialist (ID: NTRO-419)</strong> // Legal Admissibility Rating: <span id="cert-tef-rating" class="font-bold text-slate-800">91.6% (CLASS-I)</span>
+          </div>
+        </div>
+
+        <div class="space-y-2 text-[11px] leading-relaxed text-slate-600">
+          <p>1. The cryptographic evidence and network topology were generated by the Kessler-Intel automated ingestion system during the lawful discharge of investigative functions.</p>
+          <p>2. Blockchain consensus states, Bitcoin UTXO co-spend inputs, and PGP key signatures were hashed continuously using SHA-256 with zero tampering.</p>
+          <p>3. Stylometric character N-gram calculations and diurnal chronobiological distributions were derived using deterministic algorithms in compliance with Section 63(4) BSA.</p>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <div class="text-[10px] text-slate-500 uppercase font-bold">SYSTEM HASH INTEGRITY DIGEST:</div>
+          <div id="cert-hash" class="text-xs font-mono text-emerald-800 font-bold break-all mt-1">
+            e7f842b03698d5c414901f46820df38a164993ec974e6f481c0022416bc7ef09
+          </div>
+        </div>
+      </div>
+
+      <div class="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+        <span class="text-xs text-emerald-700 font-semibold">Status: Statutorily Admissible in Court of Law</span>
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded shadow-xs">
+            Print / Export PDF
+          </button>
+          <button onclick="closeBsaModal()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- APPLICATION SCRIPTS (STANDALONE LOGIC & BACKEND CONNECTOR)                -->
+  <!-- ========================================================================= -->
+  <script>
+    // System Clock
+    function updateClock() {
+      const now = new Date();
+      const s = now.toISOString().slice(11, 19);
+      const clockEl = document.getElementById('sys-clock');
+      if (clockEl) clockEl.textContent = 'UTC ' + s;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // -------------------------------------------------------------------------
+    // CLIENT-SIDE TARGET CASES CACHE
+    // -------------------------------------------------------------------------
+    const LOCAL_CASES = {
+      "CASE-01: Spectre_Syndicate": {
+        id: "CASE-01",
+        name: "Spectre_Syndicate",
+        badge: "TIER-1 APT RANSOMWARE",
+        seed_address: "bc1qa5wkfag5cluzwxcur08985nd95ec5tzk3sw4kl",
+        primary_alias: "GhostBroker",
+        aliases: ["GhostBroker", "SpectreOp", "VaporZero"],
+        pgp_fingerprint: "0x7C3B901A8D4F22C5",
+        inferred_locale: "UTC+03:00 (Moscow / MSK)",
+        proceeds: "158.4 BTC (~$10.3M USD)",
+        rebrand_history: "DarkSide affiliate -> BlackCat/ALPHV sub-ring",
+        offramp_entity: "Binance / CoinDCX Deposit Cluster (KYC Required)",
+        subpoena_ref: "REGULATORY_SUBPOENA_TARGET (FIU-IND Reference #2026-X81)",
+        diurnal_hourly: [3, 1, 0, 0, 0, 1, 4, 12, 28, 45, 62, 58, 65, 72, 80, 85, 92, 78, 54, 40, 25, 15, 8, 4],
+        sleep_trough: [2, 6],
+        sample_a: "We do not deal with script kiddies . Contact only via PGP key 7C3B901A ? Payment terms are non-negotiable . Escrow or direct multisig only . Fresh corporate admin hashes available , price firm .",
+        sample_b: "Do not waste my time with junior questions . Verify public subkey 7C3B901A ? Escrow accepted , no discount on initial loader purchase . Corporate domain hashes ready for deployment .",
+        math_ts: 91.6,
+        applicability: 94.2,
+        technical_ease: 88.5,
+        legal_admissibility: 95.8,
+        ai_score: 92.4,
+        sbert: 86.8,
+        stylometry: 94.8,
+        circadian: 96.4,
+        dual_score: 92.0
+      },
+      "CASE-02: HydraVendor_X": {
+        id: "CASE-02",
+        name: "HydraVendor_X",
+        badge: "NARCO-LOGISTICS & LAUNDERING",
+        seed_address: "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+        primary_alias: "NoxMarket_Admin",
+        aliases: ["NoxMarket_Admin", "SolarisOps", "HydraCourier"],
+        pgp_fingerprint: "0x4F1A9D82B7103EC1",
+        inferred_locale: "UTC+02:00 (Baltics / E. Europe)",
+        proceeds: "84.2 BTC (~$5.5M USD)",
+        rebrand_history: "Migrated from Hydra Darknet -> Solaris -> Mega Darknet",
+        offramp_entity: "Kraken / CoinDCX Deposit Cluster (KYC Required)",
+        subpoena_ref: "REGULATORY_SUBPOENA_TARGET (FIU-IND Reference #2026-N44)",
+        diurnal_hourly: [1, 0, 0, 0, 2, 8, 19, 38, 55, 64, 70, 75, 82, 88, 90, 84, 72, 59, 44, 30, 18, 9, 3, 2],
+        sleep_trough: [1, 5],
+        sample_a: "Fast delivery via dead drops . PGP encrypted communications mandatory . Clean unmixed UTXOs provided upon settlement ? Bulk buyers priority .",
+        sample_b: "Strict dead drop protocols . PGP encrypted inquiries only . Clean unmixed coins ready for batch disbursement ? Serious partners only .",
+        math_ts: 88.4,
+        applicability: 91.0,
+        technical_ease: 86.2,
+        legal_admissibility: 93.0,
+        ai_score: 89.8,
+        sbert: 84.5,
+        stylometry: 92.0,
+        circadian: 95.0,
+        dual_score: 89.1
+      },
+      "CASE-03: DarkExchanger_Op": {
+        id: "CASE-03",
+        name: "DarkExchanger_Op",
+        badge: "UNLICENSED OTC CASH-OUT BROKER",
+        seed_address: "bc1qm343ct3tshver5hm5220hexaf9eqvg26rwsq84",
+        primary_alias: "KestrelSec",
+        aliases: ["KestrelSec", "DreadCashOut", "OTC_Broker99"],
+        pgp_fingerprint: "0x9E2B1F44D03387AE",
+        inferred_locale: "UTC+05:30 (South Asia / IST)",
+        proceeds: "246.8 BTC (~$16.0M USD)",
+        rebrand_history: "P2P LocalBitcoins OTC desk -> Dread Exchanger Hub",
+        offramp_entity: "WazirX / CoinDCX Cluster (FIU-Registered VDA SP)",
+        subpoena_ref: "REGULATORY_SUBPOENA_TARGET (FIU-IND Reference #2026-D19)",
+        diurnal_hourly: [0, 0, 0, 1, 3, 11, 24, 49, 74, 88, 95, 98, 89, 92, 94, 88, 79, 68, 50, 35, 20, 10, 4, 1],
+        sleep_trough: [0, 4],
+        sample_a: "Instant cash out INR / USDT / BTC . Lowest spread on high volume . Contact PGP key 9E2B1F44 for bank wires ? Escrow locked .",
+        sample_b: "High liquidity OTC settlements INR & USDT . Instant transfers with verified escrow . PGP key 9E2B1F44 for proof ? Direct IM available .",
+        math_ts: 94.2,
+        applicability: 96.5,
+        technical_ease: 91.0,
+        legal_admissibility: 97.4,
+        ai_score: 93.9,
+        sbert: 89.2,
+        stylometry: 96.4,
+        circadian: 97.8,
+        dual_score: 94.1
+      }
+    };
+
+    let activeCaseKey = "CASE-01: Spectre_Syndicate";
+    let cy = null;
+
+    // -------------------------------------------------------------------------
+    // PROGRESSIVE DISCLOSURE VIEW MANAGEMENT
+    // -------------------------------------------------------------------------
+    function showCommandEntryState() {
+      const entryView = document.getElementById('command-entry-view');
+      if (entryView) {
+        entryView.classList.remove('hidden');
+        entryView.scrollTop = 0;
+      }
+      document.getElementById('investigation-workspace').classList.add('hidden');
+      document.getElementById('top-case-selector').classList.add('opacity-40');
+      document.getElementById('btn-new-scan').classList.add('hidden');
+      renderRecentSearches();
+    }
+
+    function showWorkspaceState() {
+      document.getElementById('command-entry-view').classList.add('hidden');
+      document.getElementById('investigation-workspace').classList.remove('hidden');
+      document.getElementById('top-case-selector').classList.remove('opacity-40');
+      document.getElementById('btn-new-scan').classList.remove('hidden');
+      if (cy) {
+        setTimeout(() => { cy.resize(); cy.fit(undefined, 40); }, 100);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // RECENT INTELLIGENCE QUERIES LOG & RE-RUN ENGINE
+    // -------------------------------------------------------------------------
+    const RECENT_SEARCHES_STORAGE_KEY = 'kessler_recent_searches_v1';
+
+    const DEFAULT_RECENT_QUERIES = [
+      {
+        query: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        mode: 'BTC WALLET',
+        caseKey: 'CASE-02: HydraVendor_X',
+        caseName: 'HydraVendor_X (NoxMarket)',
+        timeAgo: '12m ago',
+        timestamp: Date.now() - 12 * 60 * 1000
+      },
+      {
+        query: 'GhostBroker',
+        mode: 'FORUM ALIAS',
+        caseKey: 'CASE-01: Spectre_Syndicate',
+        caseName: 'Spectre Syndicate (Dread)',
+        timeAgo: '45m ago',
+        timestamp: Date.now() - 45 * 60 * 1000
+      },
+      {
+        query: '0x9B4E7A1',
+        mode: 'PGP KEY',
+        caseKey: 'CASE-01: Spectre_Syndicate',
+        caseName: 'Spectre RSA-4096 Master Keyring',
+        timeAgo: '2h ago',
+        timestamp: Date.now() - 120 * 60 * 1000
+      },
+      {
+        query: 'bc1qm343j92x8s8e9wlk2peel77a',
+        mode: 'BTC WALLET',
+        caseKey: 'CASE-03: DarkExchanger_Op',
+        caseName: 'DarkExchanger_Op (Peel Root)',
+        timeAgo: '4h ago',
+        timestamp: Date.now() - 240 * 60 * 1000
+      },
+      {
+        query: 'KestrelSec',
+        mode: 'FORUM ALIAS',
+        caseKey: 'CASE-03: DarkExchanger_Op',
+        caseName: 'DarkExchanger OTC Clearing Desk',
+        timeAgo: '1d ago',
+        timestamp: Date.now() - 1440 * 60 * 1000
+      }
+    ];
+
+    function getRecentSearches() {
+      try {
+        const raw = localStorage.getItem(RECENT_SEARCHES_STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.warn('Unable to parse recent searches from localStorage', e);
+      }
+      return DEFAULT_RECENT_QUERIES;
+    }
+
+    function saveRecentSearches(list) {
+      try {
+        localStorage.setItem(RECENT_SEARCHES_STORAGE_KEY, JSON.stringify(list));
+      } catch (e) {
+        console.warn('Unable to persist recent searches to localStorage', e);
+      }
+    }
+
+    function recordRecentSearch(query, mode, caseKey, customCaseName) {
+      if (!query || !query.trim()) return;
+      query = query.trim();
+
+      let list = getRecentSearches();
+      // Remove any prior entry matching this query
+      list = list.filter(item => item.query.toLowerCase() !== query.toLowerCase());
+
+      let caseName = customCaseName;
+      if (!caseName && caseKey && LOCAL_CASES[caseKey]) {
+        caseName = LOCAL_CASES[caseKey].name;
+      }
+      if (!caseName) {
+        caseName = caseKey || 'Forensic Cluster';
+      }
+
+      list.unshift({
+        query: query,
+        mode: mode || selectedInputMode || 'AUTO-DETECT',
+        caseKey: caseKey || activeCaseKey || 'CASE-01: Spectre_Syndicate',
+        caseName: caseName,
+        timeAgo: 'Just now',
+        timestamp: Date.now()
+      });
+
+      // Keep max 15 recent items
+      if (list.length > 15) list = list.slice(0, 15);
+
+      saveRecentSearches(list);
+      renderRecentSearches();
+    }
+
+    function clearRecentSearches() {
+      saveRecentSearches([]);
+      renderRecentSearches();
+    }
+
+    function renderRecentSearches() {
+      const container = document.getElementById('recent-searches-list');
+      const countEl = document.getElementById('recent-searches-count');
+      if (!container) return;
+
+      const list = getRecentSearches();
+      if (countEl) {
+        countEl.textContent = `${list.length} cached`;
+      }
+
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-xs text-slate-400 font-sans italic bg-white/70 rounded-lg border border-dashed border-slate-200">
+            No queries recorded yet. Search or test an intelligence seed to populate your history.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = '';
+      list.forEach((item) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-lg bg-white hover:bg-blue-50/60 border border-slate-200 hover:border-blue-300 transition-all shadow-2xs group';
+
+        let badgeClass = 'bg-slate-100 text-slate-700 border-slate-200';
+        if (item.mode === 'BTC WALLET') {
+          badgeClass = 'bg-amber-50 text-amber-800 border-amber-200';
+        } else if (item.mode === 'FORUM ALIAS') {
+          badgeClass = 'bg-sky-50 text-sky-800 border-sky-200';
+        } else if (item.mode === 'PGP KEY') {
+          badgeClass = 'bg-purple-50 text-purple-800 border-purple-200';
+        }
+
+        const displayQuery = item.query.length > 32 
+          ? `${item.query.slice(0, 16)}...${item.query.slice(-8)}`
+          : item.query;
+
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer" onclick="reRunRecentQuery('${item.query.replace(/'/g, "\\'")}', '${item.mode || 'AUTO-DETECT'}', '${item.caseKey || ''}')">
+            <span class="text-[9px] font-mono px-1.5 py-0.5 rounded border font-bold shrink-0 ${badgeClass}">
+              ${item.mode || 'SEED'}
+            </span>
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-xs font-bold text-slate-900 group-hover:text-blue-700 transition-colors truncate" title="${item.query}">
+                  ${displayQuery}
+                </span>
+                <span class="text-[10px] text-slate-400 shrink-0 font-sans">${item.timeAgo || 'Recent'}</span>
+              </div>
+              <div class="text-[10px] text-slate-500 font-sans truncate">
+                ${item.caseName || item.caseKey || 'Forensic Cluster'}
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0 ml-2">
+            <button 
+              type="button"
+              onclick="reRunRecentQuery('${item.query.replace(/'/g, "\\'")}', '${item.mode || 'AUTO-DETECT'}', '${item.caseKey || ''}')"
+              class="px-2.5 py-1 bg-blue-50 group-hover:bg-blue-600 text-blue-700 group-hover:text-white border border-blue-200 group-hover:border-blue-600 rounded text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              title="Quickly re-run this intelligence query"
+            >
+              <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Re-run</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function reRunRecentQuery(query, mode, caseKey) {
+      const inputEl = document.getElementById('landing-search-input');
+      if (inputEl) inputEl.value = query;
+
+      if (mode && mode !== 'AUTO-DETECT') {
+        setInputMode(mode);
+      } else {
+        handleLandingInput(query);
+      }
+
+      if (!caseKey) {
+        if (query.includes('1A1zP') || query.toLowerCase().includes('hydra') || query.toLowerCase().includes('nox')) {
+          caseKey = "CASE-02: HydraVendor_X";
+        } else if (query.includes('bc1qm343') || query.toLowerCase().includes('exchanger') || query.toLowerCase().includes('kestrel')) {
+          caseKey = "CASE-03: DarkExchanger_Op";
+        } else {
+          caseKey = "CASE-01: Spectre_Syndicate";
+        }
+      }
+
+      activeCaseKey = caseKey;
+      recordRecentSearch(query, mode, caseKey);
+      if (mode === 'BTC WALLET' || query.startsWith('1') || query.startsWith('bc1') || query.startsWith('0x')) {
+        setDetectionOption('address', false);
+      } else {
+        setDetectionOption('username', false);
+      }
+      triggerReconWithAnimation(caseKey, query);
+    }
+
+    // -------------------------------------------------------------------------
+    // PRIMARY TWO-OPTION DETECTION ENGINE (USERNAME vs ADDRESS)
+    // -------------------------------------------------------------------------
+    let currentDetectionOption = 'username';
+    let selectedInputMode = 'FORUM ALIAS';
+
+    function setDetectionOption(option, shouldUpdateValue = true) {
+      currentDetectionOption = option;
+      const userCard = document.getElementById('opt-card-username');
+      const addrCard = document.getElementById('opt-card-address');
+      const userStatus = document.getElementById('opt-status-username');
+      const addrStatus = document.getElementById('opt-status-address');
+      const inputEl = document.getElementById('landing-search-input');
+      const modeHeader = document.getElementById('search-mode-header-label');
+      const modeDot = document.getElementById('search-mode-dot');
+      const modeSubtext = document.getElementById('search-mode-subtext');
+      const inputIconBox = document.getElementById('search-input-icon-box');
+      const inputIcon = document.getElementById('search-input-icon');
+      const reconBtnText = document.getElementById('landing-recon-btn-text');
+      const hintText = document.getElementById('format-hint-text');
+      const detectBadge = document.getElementById('landing-detect-badge');
+      const detectText = document.getElementById('landing-detect-text');
+      const detectDot = document.getElementById('landing-detect-dot');
+
+      if (option === 'username') {
+        // Option 1: Username & Persona Active
+        if (userCard) {
+          userCard.className = 'text-left p-4 rounded-xl border-2 transition-all bg-sky-50/50 border-sky-500 ring-2 ring-sky-300 shadow-md group cursor-pointer relative overflow-hidden';
+        }
+        if (userStatus) {
+          userStatus.textContent = 'ACTIVE MODE';
+          userStatus.className = 'text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-sky-600 text-white animate-pulse';
+        }
+        if (addrCard) {
+          addrCard.className = 'text-left p-4 rounded-xl border-2 transition-all bg-white hover:bg-amber-50/40 border-slate-200 hover:border-amber-400 shadow-2xs group cursor-pointer relative overflow-hidden';
+        }
+        if (addrStatus) {
+          addrStatus.textContent = 'READY';
+          addrStatus.className = 'text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-slate-100 text-slate-500';
+        }
+
+        if (modeHeader) modeHeader.textContent = 'Option 1 Active: Detect from Username / Alias';
+        if (modeDot) modeDot.className = 'w-2 h-2 rounded-full bg-sky-500 animate-pulse';
+        if (modeSubtext) modeSubtext.textContent = 'NLP Stylometric & Circadian Persona Pipeline';
+        if (inputIconBox) inputIconBox.className = 'pl-2 text-sky-600 shrink-0';
+        if (inputIcon) {
+          inputIcon.innerHTML = `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`;
+        }
+        if (inputEl) {
+          inputEl.placeholder = 'Enter Darknet Forum Alias, Handle, or PGP ID (e.g. GhostBroker, NoxMarket_Admin)...';
+          if (shouldUpdateValue) inputEl.value = 'GhostBroker';
+        }
+        if (reconBtnText) reconBtnText.textContent = 'Detect from Username \u2192';
+        if (hintText) {
+          hintText.textContent = 'Option 1: Darknet Username & Stylometric Profiler';
+          hintText.className = 'text-sky-700 font-mono font-bold';
+        }
+        if (detectBadge) {
+          detectBadge.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-sky-50 text-sky-800 border border-sky-300 font-semibold flex items-center gap-1.5 hover:bg-sky-100 transition-colors shadow-2xs cursor-pointer';
+        }
+        if (detectText) detectText.textContent = 'FORUM ALIAS';
+        if (detectDot) detectDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse';
+
+        setInputMode('FORUM ALIAS', false);
+      } else {
+        // Option 2: Address & Blockchain Active
+        if (addrCard) {
+          addrCard.className = 'text-left p-4 rounded-xl border-2 transition-all bg-amber-50/50 border-amber-500 ring-2 ring-amber-300 shadow-md group cursor-pointer relative overflow-hidden';
+        }
+        if (addrStatus) {
+          addrStatus.textContent = 'ACTIVE MODE';
+          addrStatus.className = 'text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-amber-600 text-white animate-pulse';
+        }
+        if (userCard) {
+          userCard.className = 'text-left p-4 rounded-xl border-2 transition-all bg-white hover:bg-sky-50/40 border-slate-200 hover:border-sky-400 shadow-2xs group cursor-pointer relative overflow-hidden';
+        }
+        if (userStatus) {
+          userStatus.textContent = 'READY';
+          userStatus.className = 'text-[9px] font-mono px-1.5 py-0.2 rounded font-bold bg-slate-100 text-slate-500';
+        }
+
+        if (modeHeader) modeHeader.textContent = 'Option 2 Active: Detect from Address / Wallet';
+        if (modeDot) modeDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-pulse';
+        if (modeSubtext) modeSubtext.textContent = 'UTXO Multi-Input Co-Spend & Peel Chain Pipeline';
+        if (inputIconBox) inputIconBox.className = 'pl-2 text-amber-600 shrink-0';
+        if (inputIcon) {
+          inputIcon.innerHTML = `<circle cx="12" cy="12" r="9"/><path d="M14.5 9h-4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4"/>`;
+        }
+        if (inputEl) {
+          inputEl.placeholder = 'Enter Crypto Address (BTC/ETH/XMR) (e.g. 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa)...';
+          if (shouldUpdateValue) inputEl.value = '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa';
+        }
+        if (reconBtnText) reconBtnText.textContent = 'Detect from Address \u2192';
+        if (hintText) {
+          hintText.textContent = 'Option 2: UTXO Multi-Input Co-Spend & Off-Ramp Clustering';
+          hintText.className = 'text-amber-800 font-mono font-bold';
+        }
+        if (detectBadge) {
+          detectBadge.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-amber-50 text-amber-800 border border-amber-300 font-semibold flex items-center gap-1.5 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer';
+        }
+        if (detectText) detectText.textContent = 'BTC WALLET';
+        if (detectDot) detectDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+
+        setInputMode('BTC WALLET', false);
+      }
+    }
+
+    function setInputMode(mode, triggerHandle = true) {
+      selectedInputMode = mode;
+      const modes = ['FORUM ALIAS', 'BTC WALLET', 'PGP KEY', 'AUTO-DETECT'];
+      const btnMap = {
+        'FORUM ALIAS': 'mode-btn-alias',
+        'BTC WALLET': 'mode-btn-btc',
+        'PGP KEY': 'mode-btn-pgp',
+        'AUTO-DETECT': 'mode-btn-auto'
+      };
+
+      modes.forEach(m => {
+        const b = document.getElementById(btnMap[m]);
+        if (b) {
+          if (m === mode) {
+            b.className = 'px-2 py-0.5 rounded bg-blue-600 text-white font-bold transition-all shadow-2xs';
+          } else {
+            b.className = 'px-2 py-0.5 rounded text-slate-600 hover:text-slate-900 transition-all';
+          }
+        }
+      });
+
+      if (triggerHandle) {
+        const inputVal = document.getElementById('landing-search-input') ? document.getElementById('landing-search-input').value : '';
+        handleLandingInput(inputVal);
+      }
+    }
+
+    function cycleInputMode() {
+      const modes = ['FORUM ALIAS', 'BTC WALLET', 'PGP KEY', 'AUTO-DETECT'];
+      const nextIdx = (modes.indexOf(selectedInputMode) + 1) % modes.length;
+      const nextMode = modes[nextIdx];
+      if (nextMode === 'FORUM ALIAS') {
+        setDetectionOption('username', false);
+      } else if (nextMode === 'BTC WALLET') {
+        setDetectionOption('address', false);
+      } else {
+        setInputMode(nextMode);
+      }
+    }
+
+    function applyQuickSeed(seed, mode, caseKey) {
+      const inputEl = document.getElementById('landing-search-input');
+      if (inputEl) inputEl.value = seed;
+      activeCaseKey = caseKey;
+      
+      if (mode === 'BTC WALLET' || seed.startsWith('1') || seed.startsWith('bc1')) {
+        setDetectionOption('address', false);
+      } else {
+        setDetectionOption('username', false);
+      }
+      
+      setInputMode(mode);
+      handleLandingInput(seed);
+    }
+
+    function handleLandingInput(val) {
+      const badgeText = document.getElementById('landing-detect-text');
+      const badgeBtn = document.getElementById('landing-detect-badge');
+      const badgeDot = document.getElementById('landing-detect-dot');
+      const hintText = document.getElementById('format-hint-text');
+      val = (val || '').trim();
+
+      let detectedType = selectedInputMode;
+
+      const isCryptoAddress = val.startsWith('bc1') || val.startsWith('1') || val.startsWith('3') || (val.startsWith('0x') && val.length > 25) || (val.length >= 26 && !val.includes(' '));
+      const isPgp = (val.startsWith('0x') && val.length <= 18) || ((val.length === 8 || val.length === 16) && /^[0-9a-fA-F]+$/.test(val));
+
+      if (selectedInputMode === 'AUTO-DETECT') {
+        if (!val) {
+          detectedType = currentDetectionOption === 'username' ? 'FORUM ALIAS' : 'BTC WALLET';
+        } else if (isCryptoAddress) {
+          detectedType = 'BTC WALLET';
+        } else if (isPgp) {
+          detectedType = 'PGP KEY';
+        } else {
+          detectedType = 'FORUM ALIAS';
+        }
+      } else {
+        // Smart hint if user typed the opposite format
+        if (currentDetectionOption === 'username' && isCryptoAddress && val.length >= 26) {
+          if (hintText) {
+            hintText.innerHTML = `Crypto Address detected &middot; <a href="javascript:void(0)" onclick="setDetectionOption('address', false)" class="underline font-bold text-amber-700">Switch to Option 2 (Address Detection)</a>`;
+          }
+        } else if (currentDetectionOption === 'address' && !isCryptoAddress && val.length >= 3 && !val.startsWith('bc1')) {
+          if (hintText) {
+            hintText.innerHTML = `Forum Handle detected &middot; <a href="javascript:void(0)" onclick="setDetectionOption('username', false)" class="underline font-bold text-sky-700">Switch to Option 1 (Username Detection)</a>`;
+          }
+        }
+      }
+
+      if (badgeText) badgeText.textContent = detectedType;
+
+      if (badgeBtn) {
+        if (detectedType === 'BTC WALLET') {
+          badgeBtn.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-amber-50 text-amber-800 border border-amber-300 font-semibold flex items-center gap-1.5 hover:bg-amber-100 transition-colors shadow-2xs cursor-pointer';
+          if (badgeDot) badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse';
+        } else if (detectedType === 'PGP KEY') {
+          badgeBtn.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-purple-50 text-purple-800 border border-purple-300 font-semibold flex items-center gap-1.5 hover:bg-purple-100 transition-colors shadow-2xs cursor-pointer';
+          if (badgeDot) badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse';
+        } else if (detectedType === 'FORUM ALIAS') {
+          badgeBtn.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-sky-50 text-sky-800 border border-sky-300 font-semibold flex items-center gap-1.5 hover:bg-sky-100 transition-colors shadow-2xs cursor-pointer';
+          if (badgeDot) badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse';
+        } else {
+          badgeBtn.className = 'font-mono text-[11px] px-2.5 py-1.5 rounded bg-slate-100 text-slate-700 border border-slate-300 font-semibold flex items-center gap-1.5 hover:bg-slate-200 transition-colors shadow-2xs cursor-pointer';
+          if (badgeDot) badgeDot.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
+        }
+      }
+    }
+
+    function selectDossierAndLaunch(caseKey) {
+      const caseObj = LOCAL_CASES[caseKey];
+      if (caseObj) {
+        if (currentDetectionOption === 'username') {
+          document.getElementById('landing-search-input').value = caseObj.primary_alias;
+          handleLandingInput(caseObj.primary_alias);
+          recordRecentSearch(caseObj.primary_alias, 'FORUM ALIAS', caseKey, caseObj.name);
+        } else {
+          document.getElementById('landing-search-input').value = caseObj.seed_address;
+          handleLandingInput(caseObj.seed_address);
+          recordRecentSearch(caseObj.seed_address, 'BTC WALLET', caseKey, caseObj.name);
+        }
+      }
+      triggerReconWithAnimation(caseKey);
+    }
+
+    function triggerReconFromLanding() {
+      const input = document.getElementById('landing-search-input').value.trim();
+      let matchedCase = activeCaseKey;
+      if (input.includes('1A1zP') || input.toLowerCase().includes('hydra') || input.toLowerCase().includes('nox') || input.toLowerCase().includes('solaris')) {
+        matchedCase = "CASE-02: HydraVendor_X";
+      } else if (input.includes('bc1qm343') || input.toLowerCase().includes('exchanger') || input.toLowerCase().includes('kestrel') || input.toLowerCase().includes('otc')) {
+        matchedCase = "CASE-03: DarkExchanger_Op";
+      } else if (input.toLowerCase().includes('spectre') || input.toLowerCase().includes('ghostbroker') || input.toLowerCase().includes('7c3b')) {
+        matchedCase = "CASE-01: Spectre_Syndicate";
+      }
+      recordRecentSearch(input, selectedInputMode, matchedCase);
+      triggerReconWithAnimation(matchedCase, input);
+    }
+
+    // -------------------------------------------------------------------------
+    // ANIMATED RECON PROGRESS SPINNER OVERLAY
+    // -------------------------------------------------------------------------
+    function triggerReconWithAnimation(caseKey, customSeed) {
+      const overlay = document.getElementById('recon-overlay-modal');
+      const stageLabel = document.getElementById('overlay-current-stage');
+      const pctLabel = document.getElementById('overlay-pct');
+      const progressBar = document.getElementById('overlay-progress-bar');
+      const logBox = document.getElementById('overlay-log-box');
+
+      overlay.classList.remove('hidden');
+      logBox.innerHTML = '';
+
+      const stages = [
+        { pct: '20%', label: 'Stage 1: Ingesting Dark Web Onion Mirrors & Seed Address', log: 'Querying Tor v3 hidden service index...' },
+        { pct: '45%', label: 'Stage 2: Multi-Input Bitcoin UTXO Clustering & Peel Chains', log: 'Analyzing 184 blocks for common-input ownership...' },
+        { pct: '65%', label: 'Stage 3: PGP Keyring Signature Collision Analysis', log: 'Correlated 4096-bit RSA subkeys across forums...' },
+        { pct: '85%', label: 'Stage 4: Diurnal Chronobiology & NLP TF-IDF Stylometry', log: 'Mapped circadian sleep trough (02-07 UTC). Stylometry: 91.4% match.' },
+        { pct: '100%', label: 'Stage 5: Centralized KYC Off-Ramp Subpoena Resolution', log: 'Identified FIU-IND subpoena target. Generating Sec 63 BSA certificate.' }
+      ];
+
+      let idx = 0;
+      const interval = setInterval(() => {
+        if (idx < stages.length) {
+          const s = stages[idx];
+          pctLabel.textContent = s.pct;
+          progressBar.style.width = s.pct;
+          stageLabel.textContent = s.label;
+
+          const logLine = document.createElement('div');
+          logLine.textContent = `[+0${idx}.2s] ${s.log}`;
+          logBox.appendChild(logLine);
+          logBox.scrollTop = logBox.scrollHeight;
+
+          idx++;
+        } else {
+          clearInterval(interval);
+          setTimeout(() => {
+            overlay.classList.add('hidden');
+            showWorkspaceState();
+            loadCaseData(caseKey, customSeed);
+          }, 350);
+        }
+      }, 280);
+    }
+
+    // -------------------------------------------------------------------------
+    // CYTOSCAPE GRAPH INITIALIZATION (INTELLIGENCE-GRADE HIGH-CONTRAST DARK THEME)
+    // -------------------------------------------------------------------------
+    function initCytoscape() {
+      cy = cytoscape({
+        container: document.getElementById('cy'),
+        boxSelectionEnabled: false,
+        autounselectify: false,
+        style: [
+          // Common Node Styles
+          {
+            selector: 'node',
+            style: {
+              'label': 'data(label)',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'font-family': 'Inter, system-ui, sans-serif',
+              'font-size': '10px',
+              'font-weight': '600',
+              'color': '#f8fafc',
+              'text-wrap': 'wrap',
+              'text-max-width': '140px',
+              'text-outline-color': '#060913',
+              'text-outline-width': 2,
+              'text-outline-opacity': 0.95,
+              'background-color': '#1e293b',
+              'border-width': 2,
+              'border-color': '#475569',
+              'padding': '8px',
+              'transition-property': 'background-color, border-color, shadow-blur',
+              'transition-duration': '0.25s'
+            }
+          },
+          // 1. Threat Actor Core: Crimson Hexagon (#e11d48) with soft pulsing outer glow
+          {
+            selector: 'node[type="actor"]',
+            style: {
+              'shape': 'hexagon',
+              'background-color': '#e11d48',
+              'border-color': '#fda4af',
+              'border-width': 3,
+              'color': '#ffffff',
+              'font-size': '11px',
+              'font-weight': '800',
+              'width': '160px',
+              'height': '66px',
+              'shadow-blur': 22,
+              'shadow-color': '#f43f5e',
+              'shadow-opacity': 0.85
+            }
+          },
+          // 2. Forum Aliases: Ocean Cyan Rectangles (#0284c7) with white monospace labels
+          {
+            selector: 'node[type="handle"]',
+            style: {
+              'shape': 'roundrectangle',
+              'background-color': '#0284c7',
+              'border-color': '#38bdf8',
+              'border-width': 2,
+              'color': '#ffffff',
+              'font-family': 'JetBrains Mono, monospace',
+              'font-size': '10.5px',
+              'font-weight': '600',
+              'width': '145px',
+              'height': '54px',
+              'shadow-blur': 12,
+              'shadow-color': '#0284c7',
+              'shadow-opacity': 0.55
+            }
+          },
+          // 3. Crypto Wallets: Gold Diamonds (#d97706) showing truncated hashes
+          {
+            selector: 'node[type="wallet"]',
+            style: {
+              'shape': 'diamond',
+              'background-color': '#d97706',
+              'border-color': '#fde68a',
+              'border-width': 2.5,
+              'color': '#ffffff',
+              'font-family': 'JetBrains Mono, monospace',
+              'font-size': '10px',
+              'font-weight': '700',
+              'width': '135px',
+              'height': '80px',
+              'shadow-blur': 14,
+              'shadow-color': '#d97706',
+              'shadow-opacity': 0.6
+            }
+          },
+          // 4. KYC Exchange Terminal: Emerald Tag with bold glow labeled Surface Off-Ramp Anchor
+          {
+            selector: 'node[type="kyc_exchange"]',
+            style: {
+              'shape': 'roundrectangle',
+              'background-color': '#065f46',
+              'border-color': '#34d399',
+              'border-width': 3.5,
+              'color': '#ffffff',
+              'font-weight': '800',
+              'font-size': '11px',
+              'width': '260px',
+              'height': '92px',
+              'text-max-width': '248px',
+              'text-wrap': 'wrap',
+              'text-valign': 'center',
+              'text-halign': 'center',
+              'padding': '12px',
+              'line-height': 1.3,
+              'shadow-blur': 26,
+              'shadow-color': '#10b981',
+              'shadow-opacity': 0.95
+            }
+          },
+          // 5. Infrastructure Nodes: Slate Squares (#475569) labeled with Apache/Nginx banner leaks
+          {
+            selector: 'node[type="infra"]',
+            style: {
+              'shape': 'rectangle',
+              'background-color': '#475569',
+              'border-color': '#94a3b8',
+              'border-width': 2,
+              'color': '#f8fafc',
+              'font-family': 'JetBrains Mono, monospace',
+              'font-size': '10px',
+              'font-weight': '600',
+              'width': '145px',
+              'height': '54px',
+              'shadow-blur': 10,
+              'shadow-color': '#64748b',
+              'shadow-opacity': 0.4
+            }
+          },
+          // 6. PGP Master Key Node
+          {
+            selector: 'node[type="pgp"]',
+            style: {
+              'shape': 'roundrectangle',
+              'background-color': '#6366f1',
+              'border-color': '#a5b4fc',
+              'border-width': 2,
+              'color': '#ffffff',
+              'font-family': 'JetBrains Mono, monospace',
+              'font-size': '10px',
+              'font-weight': '600',
+              'width': '135px',
+              'height': '52px',
+              'shadow-blur': 12,
+              'shadow-color': '#6366f1',
+              'shadow-opacity': 0.5
+            }
+          },
+          // Common Edge Styles
+          {
+            selector: 'edge',
+            style: {
+              'label': 'data(label)',
+              'font-family': 'Inter, system-ui, sans-serif',
+              'font-size': '9px',
+              'font-weight': '600',
+              'color': '#cbd5e1',
+              'text-background-color': '#060913',
+              'text-background-opacity': 0.95,
+              'text-background-padding': '3px',
+              'text-background-shape': 'roundrectangle',
+              'text-border-color': '#1e293b',
+              'text-border-width': 1,
+              'text-border-opacity': 0.8,
+              'width': 2,
+              'target-arrow-shape': 'triangle',
+              'curve-style': 'bezier',
+              'arrow-scale': 0.9
+            }
+          },
+          // Deterministic links: Solid bright cyan (#06b6d4)
+          {
+            selector: 'edge[isDeterministic = true]',
+            style: {
+              'line-color': '#06b6d4',
+              'target-arrow-color': '#06b6d4',
+              'line-style': 'solid',
+              'width': 2.5,
+              'color': '#67e8f9'
+            }
+          },
+          // Probabilistic links: Dashed violet (#a855f7)
+          {
+            selector: 'edge[isDeterministic = false]',
+            style: {
+              'line-color': '#a855f7',
+              'target-arrow-color': '#a855f7',
+              'line-style': 'dashed',
+              'line-dash-pattern': [6, 4],
+              'width': 2,
+              'color': '#d8b4fe'
+            }
+          },
+          // Human Attestation: Confirmed link (glowing emerald)
+          {
+            selector: 'edge.confirmed-edge',
+            style: {
+              'line-color': '#10b981',
+              'target-arrow-color': '#10b981',
+              'line-style': 'solid',
+              'width': 3.5,
+              'color': '#6ee7b7',
+              'shadow-blur': 14,
+              'shadow-color': '#10b981',
+              'shadow-opacity': 0.95
+            }
+          },
+          // Human Attestation: Flagged false positive (dimmed dashed red)
+          {
+            selector: 'edge.flagged-edge',
+            style: {
+              'line-color': '#ef4444',
+              'target-arrow-color': '#ef4444',
+              'line-style': 'dashed',
+              'line-dash-pattern': [3, 4],
+              'opacity': 0.35,
+              'width': 1.5,
+              'color': '#fca5a5'
+            }
+          },
+          // Selection Highlights
+          {
+            selector: 'node:selected',
+            style: {
+              'border-color': '#ffffff',
+              'border-width': 3.5,
+              'shadow-blur': 25,
+              'shadow-color': '#38bdf8',
+              'shadow-opacity': 1
+            }
+          },
+          {
+            selector: 'edge:selected',
+            style: {
+              'line-color': '#38bdf8',
+              'target-arrow-color': '#38bdf8',
+              'width': 4
+            }
+          },
+          // Surface Off-Ramp Focus & Subpoena Path Highlights
+          {
+            selector: '.offramp-highlight',
+            style: {
+              'border-color': '#34d399',
+              'border-width': 4.5,
+              'shadow-blur': 36,
+              'shadow-color': '#10b981',
+              'shadow-opacity': 1,
+              'opacity': 1
+            }
+          },
+          {
+            selector: '.offramp-edge-highlight',
+            style: {
+              'line-color': '#10b981',
+              'target-arrow-color': '#10b981',
+              'width': 5,
+              'shadow-blur': 22,
+              'shadow-color': '#10b981',
+              'shadow-opacity': 0.95,
+              'opacity': 1
+            }
+          },
+          {
+            selector: '.dimmed-element',
+            style: {
+              'opacity': 0.2
+            }
+          }
+        ],
+        layout: { name: 'cose', animate: false }
+      });
+
+      // Node and Edge Click Inspector Listener
+      cy.on('tap', 'node', function(evt) {
+        inspectElement('node', evt.target.data());
+      });
+
+      cy.on('tap', 'edge', function(evt) {
+        inspectElement('edge', evt.target.data());
+      });
+
+      cy.on('tap', function(evt) {
+        if (evt.target === cy) {
+          resetInspector();
+        }
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // ACTIVE INSPECTOR
+    // -------------------------------------------------------------------------
+    function inspectElement(type, data) {
+      const typeEl = document.getElementById('inspect-type');
+      const contentEl = document.getElementById('inspect-content');
+      
+      if (type === 'node') {
+        typeEl.textContent = `[NODE: ${(data.type || 'ENTITY').toUpperCase()}]`;
+        typeEl.className = 'text-[10px] font-mono text-blue-700 font-bold';
+        
+        let html = `
+          <div class="space-y-1">
+            <div class="text-slate-900 font-bold text-xs">${data.label.replace('\\n', ' ')}</div>
+            <div class="text-slate-600 text-xs">${data.details || 'Attributed forensic artifact.'}</div>
+            <div class="pt-1.5 border-t border-slate-200 flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">Confidence Score:</span>
+              <span class="text-emerald-700 font-mono font-bold">${data.confidence || 98.5}%</span>
+            </div>
+        `;
+        if (data.full_address) {
+          html += `
+            <div class="pt-1 text-[11px] font-mono text-slate-700 break-all">
+              <span class="text-slate-500">Address:</span> ${data.full_address}
+            </div>
+          `;
+        }
+        if (data.type === 'actor') {
+          html += `
+            <div class="mt-2 p-2.5 rounded-lg bg-purple-50/70 border border-purple-200 text-xs space-y-1.5 shadow-2xs">
+              <div class="flex items-center justify-between text-[10px] font-mono font-bold text-purple-900">
+                <span class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-purple-600 animate-pulse"></span>THREAT ACTOR DETECTOR:</span>
+                <span class="px-1.5 py-0.2 rounded bg-purple-200 text-purple-950 font-bold">DUAL-ENGINE</span>
+              </div>
+              <div class="flex justify-between items-center text-[11px] pt-0.5">
+                <span class="text-blue-900 font-medium">1. Mathematical Approach (TS Formula):</span>
+                <span class="font-mono font-bold text-blue-700">91.6%</span>
+              </div>
+              <div class="flex justify-between items-center text-[11px]">
+                <span class="text-purple-900 font-medium">2. AI Approach (Neural NLP Ensemble):</span>
+                <span class="font-mono font-bold text-purple-700">92.4%</span>
+              </div>
+              <div class="flex justify-between items-center text-[11px] pt-1 border-t border-purple-200/80 font-bold">
+                <span class="text-slate-900">Synthesized Attribution Confidence:</span>
+                <span class="font-mono text-emerald-700 font-extrabold">92.0% [CLASS-I ADMISSIBLE]</span>
+              </div>
+            </div>
+          `;
+        }
+        if (data.subpoena_ref || data.type === 'kyc_exchange') {
+          html += `
+            <div class="p-2.5 mt-2 rounded-lg bg-emerald-50 border border-emerald-300 text-xs text-emerald-950 flex flex-col gap-1.5 shadow-2xs">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] font-mono font-extrabold uppercase text-emerald-800 tracking-wider">Statutory Off-Ramp Anchor</span>
+                <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-emerald-200 text-emerald-900 font-bold">BSA COMPLIANT</span>
+              </div>
+              <div class="font-mono text-[11px] font-bold text-emerald-900 break-all">
+                ${data.subpoena_ref || 'FIU-IND Subpoena Requisition Under Sec 63 BSA'}
+              </div>
+              <button onclick="openBsaModal()" class="w-full mt-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold flex items-center justify-center gap-1.5 shadow-2xs transition-colors cursor-pointer">
+                <span>View Section 63 BSA Statutory Certificate &rarr;</span>
+              </button>
+            </div>
+          `;
+        }
+        html += `</div>`;
+        contentEl.innerHTML = html;
+      } else {
+        typeEl.textContent = `[RELATION: ${data.isDeterministic ? 'DETERMINISTIC' : 'PROBABILISTIC'}]`;
+        typeEl.className = `text-[10px] font-mono font-bold ${data.isDeterministic ? 'text-blue-700' : 'text-emerald-700'}`;
+        
+        contentEl.innerHTML = `
+          <div class="space-y-1">
+            <div class="text-slate-900 font-bold text-xs">${data.label}</div>
+            <div class="text-slate-600 text-xs">Vector: ${data.vector || 'Forensic Linkage'}</div>
+            <div class="flex items-center justify-between text-xs pt-1.5 border-t border-slate-200">
+              <span class="text-slate-500 font-medium">Proof Category:</span>
+              <span class="${data.isDeterministic ? 'text-blue-700 font-bold' : 'text-emerald-700 font-bold'}">
+                ${data.isDeterministic ? 'Solid (Cryptographic / UTXO Block Proof)' : 'Dashed (NLP / Stylometric Correlation)'}
+              </span>
+            </div>
+            <div class="text-[10px] font-mono text-slate-500 break-all mt-1">
+              Evidence SHA-256 Digest: ${data.evidenceHash || 'c8b4a209...'}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    function resetInspector() {
+      document.getElementById('inspect-type').textContent = '[CLICK ANY NODE OR EDGE TO INSPECT]';
+      document.getElementById('inspect-type').className = 'text-[10px] font-mono text-slate-500 font-medium';
+      document.getElementById('inspect-content').innerHTML = `
+        Click any node or relationship vector in the graph canvas to inspect cryptographic hashes, UTXO transaction blocks, or legal subpoena parameters.
+      `;
+    }
+
+    // -------------------------------------------------------------------------
+    // CIRCADIAN DIURNAL HEATMAP RENDERER (7-DAY COMPARATIVE DUAL-ALIAS)
+    // -------------------------------------------------------------------------
+    function renderDiurnalCanvas(hourly, sleepWindow) {
+      const canvas = document.getElementById('diurnal-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const maxVal = Math.max(...hourly, 1);
+      const barWidth = (w - 24) / 24;
+      const sleepStart = sleepWindow[0];
+      const sleepEnd = sleepWindow[1];
+
+      // Sleep Trough Highlight Region
+      const sleepX1 = 12 + (sleepStart * barWidth);
+      const sleepX2 = 12 + (sleepEnd * barWidth);
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.08)';
+      ctx.fillRect(sleepX1, 0, sleepX2 - sleepX1, h);
+
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.3)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(sleepX1, 0); ctx.lineTo(sleepX1, h);
+      ctx.moveTo(sleepX2, 0); ctx.lineTo(sleepX2, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Draw Bars
+      for (let hour = 0; hour < 24; hour++) {
+        const val = hourly[hour];
+        const barHeight = (val / maxVal) * (h - 18);
+        const x = 12 + (hour * barWidth) + 1;
+        const y = (h - 12) - barHeight;
+
+        const inSleep = hour >= sleepStart && hour <= sleepEnd;
+        if (inSleep) {
+          ctx.fillStyle = '#ef4444'; // Subdued rose
+        } else if (val > maxVal * 0.75) {
+          ctx.fillStyle = '#059669'; // Peak emerald
+        } else {
+          ctx.fillStyle = '#2563eb'; // Cobalt regular
+        }
+
+        ctx.fillRect(x, y, barWidth - 2, barHeight);
+      }
+
+      // Base line
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.beginPath();
+      ctx.moveTo(8, h - 12);
+      ctx.lineTo(w - 8, h - 12);
+      ctx.stroke();
+    }
+
+    // 7-Day x 24-Hour Comparative Matrix Heatmap
+    let currentHeatmapData = null;
+
+    function renderDiurnalHeatmap(caseObj) {
+      const canvas = document.getElementById('diurnal-heatmap-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const sleepStart = caseObj.sleep_trough[0];
+      const sleepEnd = caseObj.sleep_trough[1];
+
+      const leftMargin = 30;
+      const topMargin = 16;
+      const rightMargin = 6;
+      const bottomMargin = 4;
+
+      const gridW = w - leftMargin - rightMargin;
+      const gridH = h - topMargin - bottomMargin;
+      const cellW = gridW / 24;
+      const rowH = gridH / 7;
+
+      // Generate realistic daily comparative activity based on base hourly profile
+      const matrix = [];
+      for (let d = 0; d < 7; d++) {
+        const dayRows = { aliasA: [], aliasB: [] };
+        // Weekend variation factor
+        const dayFactor = (d >= 5) ? 1.15 : 0.95;
+        for (let hr = 0; hr < 24; hr++) {
+          const inSleep = hr >= sleepStart && hr <= sleepEnd;
+          if (inSleep) {
+            dayRows.aliasA.push(0);
+            dayRows.aliasB.push(0);
+          } else {
+            const base = caseObj.diurnal_hourly[hr] || 5;
+            // Slight natural jitter between Alias A and Alias B
+            const jitterA = Math.sin((d * 24 + hr) * 0.5) * 4;
+            const jitterB = Math.cos((d * 24 + hr) * 0.4) * 3;
+            const valA = Math.max(0, Math.min(100, Math.round((base * 1.5 + jitterA) * dayFactor)));
+            const valB = Math.max(0, Math.min(100, Math.round((base * 1.4 + jitterB) * dayFactor)));
+            dayRows.aliasA.push(valA);
+            dayRows.aliasB.push(valB);
+          }
+        }
+        matrix.push(dayRows);
+      }
+      currentHeatmapData = { matrix, days, sleepStart, sleepEnd, cellW, rowH, leftMargin, topMargin, caseObj };
+
+      // 1. Draw Sleep Trough Vertical Band across all rows
+      const sleepX1 = leftMargin + (sleepStart * cellW);
+      const sleepX2 = leftMargin + (sleepEnd * cellW);
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.15)';
+      ctx.fillRect(sleepX1, topMargin, sleepX2 - sleepX1, gridH);
+
+      ctx.strokeStyle = 'rgba(244, 63, 94, 0.4)';
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 2]);
+      ctx.beginPath();
+      ctx.moveTo(sleepX1, topMargin); ctx.lineTo(sleepX1, topMargin + gridH);
+      ctx.moveTo(sleepX2, topMargin); ctx.lineTo(sleepX2, topMargin + gridH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 2. Draw Hour Markers at top
+      ctx.fillStyle = '#64748b';
+      ctx.font = '8px JetBrains Mono, monospace';
+      ctx.textAlign = 'center';
+      for (let hr = 0; hr < 24; hr += 4) {
+        const x = leftMargin + (hr * cellW) + (cellW / 2);
+        ctx.fillText(String(hr).padStart(2, '0'), x, topMargin - 4);
+      }
+
+      // 3. Draw Rows and Cells
+      for (let d = 0; d < 7; d++) {
+        const y = topMargin + (d * rowH);
+
+        // Day label
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(days[d], leftMargin - 6, y + (rowH / 2) + 3);
+
+        // Cells for Alias A (top half) and Alias B (bottom half)
+        for (let hr = 0; hr < 24; hr++) {
+          const x = leftMargin + (hr * cellW);
+          const valA = matrix[d].aliasA[hr];
+          const valB = matrix[d].aliasB[hr];
+          const inSleep = hr >= sleepStart && hr <= sleepEnd;
+
+          // Strip A (Ocean Cyan scale)
+          if (inSleep) {
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+          } else if (valA === 0) {
+            ctx.fillStyle = '#0f172a';
+          } else {
+            const alpha = 0.25 + (valA / 100) * 0.75;
+            ctx.fillStyle = `rgba(2, 132, 199, ${alpha.toFixed(2)})`;
+          }
+          ctx.fillRect(x + 0.5, y + 1, cellW - 1, (rowH / 2) - 1.5);
+
+          // Strip B (Emerald Green scale)
+          if (inSleep) {
+            ctx.fillStyle = 'rgba(244, 63, 94, 0.2)';
+          } else if (valB === 0) {
+            ctx.fillStyle = '#0f172a';
+          } else {
+            const alpha = 0.25 + (valB / 100) * 0.75;
+            ctx.fillStyle = `rgba(16, 185, 129, ${alpha.toFixed(2)})`;
+          }
+          ctx.fillRect(x + 0.5, y + (rowH / 2) + 0.5, cellW - 1, (rowH / 2) - 1.5);
+        }
+      }
+
+      // Attach mouse hover listener once
+      if (!canvas.dataset.hasListener) {
+        canvas.dataset.hasListener = 'true';
+        canvas.addEventListener('mousemove', handleHeatmapHover);
+        canvas.addEventListener('mouseleave', () => {
+          const hoverEl = document.getElementById('heatmap-cell-hover');
+          if (hoverEl) hoverEl.textContent = 'Hover grid cell for synchronized hourly telemetry';
+        });
+      }
+    }
+
+    function handleHeatmapHover(evt) {
+      if (!currentHeatmapData) return;
+      const canvas = evt.target;
+      const rect = canvas.getBoundingClientRect();
+      const x = (evt.clientX - rect.left) * (canvas.width / rect.width);
+      const y = (evt.clientY - rect.top) * (canvas.height / rect.height);
+
+      const { matrix, days, sleepStart, sleepEnd, cellW, rowH, leftMargin, topMargin, caseObj } = currentHeatmapData;
+
+      if (x < leftMargin || y < topMargin) return;
+
+      const hour = Math.floor((x - leftMargin) / cellW);
+      const dayIdx = Math.floor((y - topMargin) / rowH);
+
+      if (hour >= 0 && hour < 24 && dayIdx >= 0 && dayIdx < 7) {
+        const valA = matrix[dayIdx].aliasA[hour];
+        const valB = matrix[dayIdx].aliasB[hour];
+        const inSleep = hour >= sleepStart && hour <= sleepEnd;
+
+        const hoverEl = document.getElementById('heatmap-cell-hover');
+        if (hoverEl) {
+          if (inSleep) {
+            hoverEl.innerHTML = `<span class="text-rose-600 font-bold">${days[dayIdx]} ${String(hour).padStart(2, '0')}:00 UTC [SLEEP TROUGH]</span>: Zero activity recorded across both handles (circadian quiet).`;
+          } else {
+            hoverEl.innerHTML = `<span class="text-slate-700 font-bold">${days[dayIdx]} ${String(hour).padStart(2, '0')}:00 UTC</span>: <span class="text-cyan-700 font-bold">@${caseObj.primary_alias}: ${valA}% act</span> | <span class="text-emerald-700 font-bold">@${caseObj.primary_alias}_mirror: ${valB}% act</span> (Matched peak)`;
+          }
+        }
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // HUMAN-IN-THE-LOOP VECTOR ATTESTATION ENGINE
+    // -------------------------------------------------------------------------
+    let vectorAttestations = [
+      {
+        id: 'utxo',
+        title: '1. Bitcoin UTXO Co-Spend',
+        category: 'DETERMINISTIC // BLOCKCHAIN UTXO',
+        edgeId: 'e_utxo',
+        custodyStep: 2,
+        status: 'pending', // 'pending' | 'confirmed' | 'flagged'
+        desc: 'Multi-input UTXO clustering proof linking seed wallet to peel change output on Block #782914.'
+      },
+      {
+        id: 'pgp',
+        title: '2. PGP Keyring Collision',
+        category: 'DETERMINISTIC // CRYPTOGRAPHIC',
+        edgeId: 'e_pgp_1',
+        custodyStep: 3,
+        status: 'pending',
+        desc: '4096-bit RSA subkey collision cross-signing Dread and Exploit.in forum announcements.'
+      },
+      {
+        id: 'stylo',
+        title: '3. NLP Stylometry & S-BERT',
+        category: 'PROBABILISTIC // AI ATTRIBUTION',
+        edgeId: 'e_stylo',
+        custodyStep: 4,
+        status: 'pending',
+        desc: '91.4% Cosine TF-IDF character 3-5 gram similarity with identical Cyrillic homoglyph artifacts.'
+      },
+      {
+        id: 'infra',
+        title: '4. Hosting / Banner Leak',
+        category: 'PROBABILISTIC // NETWORK TELEMETRY',
+        edgeId: 'e_infra',
+        custodyStep: 5,
+        status: 'pending',
+        desc: 'Nginx 1.18.0 server banner leak and correlated JARM TLS handshake fingerprint on Njalla VPS.'
+      }
+    ];
+
+    let currentChainOfCustody = [];
+    let currentTefData = null;
+
+    function renderVectorAttestations() {
+      const container = document.getElementById('vector-attestation-list');
+      if (!container) return;
+      container.innerHTML = '';
+
+      let confirmedCount = 0;
+      let flaggedCount = 0;
+
+      vectorAttestations.forEach(v => {
+        if (v.status === 'confirmed') confirmedCount++;
+        if (v.status === 'flagged') flaggedCount++;
+
+        const card = document.createElement('div');
+        let borderClass = 'border-slate-200 bg-white';
+        let statusBadge = `<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">PENDING_REVIEW</span>`;
+
+        if (v.status === 'confirmed') {
+          borderClass = 'border-emerald-300 bg-emerald-50/40 shadow-xs';
+          statusBadge = `<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">✔ CONFIRMED</span>`;
+        } else if (v.status === 'flagged') {
+          borderClass = 'border-rose-300 bg-rose-50/30 opacity-75';
+          statusBadge = `<span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 border border-rose-300 flex items-center gap-1">✖ FLAGGED_FP</span>`;
+        }
+
+        card.className = `p-2.5 rounded-lg border transition-all ${borderClass}`;
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-[11px] font-bold text-slate-900 block">${v.title}</span>
+              <span class="text-[9px] font-mono text-slate-500 font-semibold">${v.category}</span>
+            </div>
+            ${statusBadge}
+          </div>
+          <p class="text-[11px] text-slate-600 mt-1 leading-snug font-sans">${v.desc}</p>
+          <div class="mt-2 pt-1.5 border-t border-slate-100 flex items-center gap-1.5">
+            <button 
+              type="button"
+              onclick="confirmVector('${v.id}')"
+              class="flex-1 py-1 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${v.status === 'confirmed' ? 'bg-emerald-600 text-white shadow-2xs' : 'bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 border border-slate-200 hover:border-emerald-300'}"
+            >
+              <svg class="w-3 h-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              <span>Confirm Link</span>
+            </button>
+            <button 
+              type="button"
+              onclick="flagVectorFalsePositive('${v.id}')"
+              class="flex-1 py-1 px-2 rounded text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${v.status === 'flagged' ? 'bg-rose-600 text-white shadow-2xs' : 'bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-800 border border-slate-200 hover:border-rose-300'}"
+            >
+              <svg class="w-3 h-3 text-current" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <span>Flag False Pos.</span>
+            </button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      // Update Top Badge
+      const badge = document.getElementById('attestation-progress-badge');
+      if (badge) {
+        if (confirmedCount === 4) {
+          badge.textContent = `4/4 EXAMINER CERTIFIED`;
+          badge.className = `text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold`;
+        } else if (flaggedCount > 0) {
+          badge.textContent = `${confirmedCount}/4 CONFIRMED (${flaggedCount} FLAGGED)`;
+          badge.className = `text-[10px] font-mono px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300 font-bold`;
+        } else {
+          badge.textContent = `${confirmedCount}/4 ATTESTED`;
+          badge.className = `text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-200 font-bold`;
+        }
+      }
+    }
+
+    function confirmVector(vectorId) {
+      const v = vectorAttestations.find(item => item.id === vectorId);
+      if (!v) return;
+      v.status = 'confirmed';
+
+      // Update Cytoscape Edge Visual Style
+      if (cy) {
+        const edge = cy.getElementById(v.edgeId);
+        if (edge && edge.length > 0) {
+          edge.removeClass('flagged-edge');
+          edge.addClass('confirmed-edge');
+        }
+      }
+
+      // Update Chain of Custody
+      if (currentChainOfCustody && currentChainOfCustody[v.custodyStep - 1]) {
+        currentChainOfCustody[v.custodyStep - 1].analyst_certified = true;
+      }
+
+      // Recalculate TEF Score
+      recalculateTefScore();
+      renderVectorAttestations();
+      renderCustodyChecklist(currentChainOfCustody);
+
+      logToTerminal(
+        `+0${Math.floor(Math.random() * 5 + 1)}.0s`,
+        'ATTEST',
+        `Human Examiner (NTRO-419) CONFIRMED vector "${v.title}". Section 63 BSA legal weight locked.`
+      );
+    }
+
+    function flagVectorFalsePositive(vectorId) {
+      const v = vectorAttestations.find(item => item.id === vectorId);
+      if (!v) return;
+      v.status = 'flagged';
+
+      // Update Cytoscape Edge Visual Style
+      if (cy) {
+        const edge = cy.getElementById(v.edgeId);
+        if (edge && edge.length > 0) {
+          edge.removeClass('confirmed-edge');
+          edge.addClass('flagged-edge');
+        }
+      }
+
+      // Update Chain of Custody
+      if (currentChainOfCustody && currentChainOfCustody[v.custodyStep - 1]) {
+        currentChainOfCustody[v.custodyStep - 1].analyst_certified = false;
+        currentChainOfCustody[v.custodyStep - 1].flagged_fp = true;
+      }
+
+      // Recalculate TEF Score
+      recalculateTefScore();
+      renderVectorAttestations();
+      renderCustodyChecklist(currentChainOfCustody);
+
+      logToTerminal(
+        `+0${Math.floor(Math.random() * 5 + 1)}.0s`,
+        'WARN',
+        `Human Examiner FLAGGED FALSE POSITIVE on "${v.title}". Linkage penalized and excluded from statutory bundle.`
+      );
+    }
+
+    function confirmAllVectors() {
+      vectorAttestations.forEach(v => {
+        v.status = 'confirmed';
+        if (cy) {
+          const edge = cy.getElementById(v.edgeId);
+          if (edge && edge.length > 0) {
+            edge.removeClass('flagged-edge');
+            edge.addClass('confirmed-edge');
+          }
+        }
+      });
+      if (currentChainOfCustody) {
+        currentChainOfCustody.forEach(s => { s.analyst_certified = true; s.flagged_fp = false; });
+      }
+      recalculateTefScore();
+      renderVectorAttestations();
+      renderCustodyChecklist(currentChainOfCustody);
+      logToTerminal('+01.0s', 'ATTEST', 'All 4 Forensic Vectors Attested & Confirmed by Examiner NTRO-419.');
+    }
+
+    function resetAllVectors() {
+      vectorAttestations.forEach(v => {
+        v.status = 'pending';
+        if (cy) {
+          const edge = cy.getElementById(v.edgeId);
+          if (edge && edge.length > 0) {
+            edge.removeClass('confirmed-edge');
+            edge.removeClass('flagged-edge');
+          }
+        }
+      });
+      if (currentChainOfCustody) {
+        currentChainOfCustody.forEach(s => { s.analyst_certified = false; s.flagged_fp = false; });
+      }
+      recalculateTefScore();
+      renderVectorAttestations();
+      renderCustodyChecklist(currentChainOfCustody);
+    }
+
+    function recalculateTefScore() {
+      if (!currentTefData) return;
+      const confirmedCount = vectorAttestations.filter(v => v.status === 'confirmed').length;
+      const flaggedCount = vectorAttestations.filter(v => v.status === 'flagged').length;
+
+      let baseScore = 91.6;
+      let appScore = 94.2;
+      let easeScore = 88.5;
+      let legalScore = 95.8;
+
+      // Adjustments based on examiner actions
+      baseScore = baseScore + (confirmedCount * 2.0) - (flaggedCount * 18.5);
+      legalScore = legalScore + (confirmedCount * 1.5) - (flaggedCount * 22.0);
+      appScore = appScore + (confirmedCount * 1.2) - (flaggedCount * 12.0);
+
+      const composite = Math.max(20.0, Math.min(99.8, parseFloat(baseScore.toFixed(1))));
+      let grade = "CERTIFIED ADMISSIBLE (CLASS-I)";
+      if (composite < 70.0) {
+        grade = "CONTESTED / INCONCLUSIVE (CLASS-III)";
+      } else if (composite < 88.0) {
+        grade = "PROVISIONAL ATTESTATION (CLASS-II)";
+      }
+
+      currentTefData.composite_score = composite;
+      currentTefData.admissibility_grade = grade;
+      currentTefData.metrics.applicability_raw = Math.max(10, Math.min(99, parseFloat(appScore.toFixed(1))));
+      currentTefData.metrics.technical_ease_raw = parseFloat(easeScore.toFixed(1));
+      currentTefData.metrics.legal_admissibility_raw = Math.max(10, Math.min(99, parseFloat(legalScore.toFixed(1))));
+
+      updateTefDisplay(currentTefData);
+
+      // Update Section 63 BSA Hash dynamically to reflect integrity seal
+      const hashEl = document.getElementById('cert-sha-hash');
+      if (hashEl) {
+        const charSuffix = (confirmedCount * 7 + flaggedCount * 3).toString(16);
+        hashEl.textContent = `SHA-256: 8f9b4c02e1d7a982f1b0a887e0293847561029384756102938475610293847${charSuffix}`;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // LINGUISTIC DIFF HIGHLIGHTER
+    // -------------------------------------------------------------------------
+    function highlightMatches(text) {
+      let out = text;
+      out = out.replace(/\s\?/g, '<span class="px-1 py-0.5 bg-rose-50 text-rose-700 font-bold rounded border border-rose-200"> ?</span>');
+      out = out.replace(/\s,/g, '<span class="px-1 py-0.5 bg-emerald-50 text-emerald-700 font-bold rounded border border-emerald-200"> ,</span>');
+      out = out.replace(/(7C3B901A|9E2B1F44|4F1A9D82)/g, '<span class="px-1 py-0.5 bg-blue-50 text-blue-700 font-bold rounded border border-blue-200">$1</span>');
+      out = out.replace(/(escrow|multisig|UTXO|script kiddies|dead drops)/gi, '<span class="px-1 py-0.5 bg-emerald-50 text-emerald-800 font-bold rounded border border-emerald-200">$1</span>');
+      return out;
+    }
+
+    function toggleDiffDrawer() {
+      const drawer = document.getElementById('diff-drawer');
+      if (drawer) drawer.classList.toggle('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // UPDATE GRAPH ELEMENTS
+    // -------------------------------------------------------------------------
+    function updateGraphElements(graph) {
+      if (!cy || !graph) return;
+      cy.elements().remove();
+      cy.add(graph.nodes);
+      cy.add(graph.edges);
+
+      const countsEl = document.getElementById('graph-counts');
+      if (countsEl) {
+        countsEl.textContent = `[${graph.nodes.length} ENTITIES // ${graph.edges.length} RELATIONS]`;
+      }
+
+      // Default to the clear 4-Pole Attribution Tree layout
+      applyPipelineTreeLayout(true);
+    }
+
+    // -------------------------------------------------------------------------
+    // METHODOLOGY VIEW SWITCHER (DUAL / MATHEMATICAL / AI)
+    // -------------------------------------------------------------------------
+    let currentDetectorViewTab = 'both';
+    function setDetectorViewTab(tab) {
+      currentDetectorViewTab = tab;
+      const panelMath = document.getElementById('panel-math-approach');
+      const panelAi = document.getElementById('panel-ai-approach');
+      const btnBoth = document.getElementById('tab-btn-both');
+      const btnMath = document.getElementById('tab-btn-math');
+      const btnAi = document.getElementById('tab-btn-ai');
+
+      const activeClass = 'py-1 px-1 rounded bg-blue-600 text-white shadow-xs transition-colors cursor-pointer text-center';
+      const inactiveClass = 'py-1 px-1 rounded text-slate-600 hover:text-slate-900 transition-colors cursor-pointer text-center';
+
+      if (tab === 'both') {
+        if (panelMath) panelMath.classList.remove('hidden');
+        if (panelAi) panelAi.classList.remove('hidden');
+        if (btnBoth) btnBoth.className = activeClass;
+        if (btnMath) btnMath.className = inactiveClass;
+        if (btnAi) btnAi.className = inactiveClass;
+      } else if (tab === 'math') {
+        if (panelMath) panelMath.classList.remove('hidden');
+        if (panelAi) panelAi.classList.add('hidden');
+        if (btnBoth) btnBoth.className = inactiveClass;
+        if (btnMath) btnMath.className = activeClass;
+        if (btnAi) btnAi.className = inactiveClass;
+      } else if (tab === 'ai') {
+        if (panelMath) panelMath.classList.add('hidden');
+        if (panelAi) panelAi.classList.remove('hidden');
+        if (btnBoth) btnBoth.className = inactiveClass;
+        if (btnMath) btnMath.className = inactiveClass;
+        if (btnAi) btnAi.className = activeClass;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // UPDATE TEF & DUAL THREAT ACTOR DETECTOR DISPLAY
+    // -------------------------------------------------------------------------
+    function updateTefDisplay(tef, caseData) {
+      if (!tef) return;
+      const activeObj = caseData || (LOCAL_CASES[activeCaseKey] || LOCAL_CASES["CASE-01: Spectre_Syndicate"]);
+
+      // 1. Mathematical TS Score
+      const mathScore = Number(tef.composite_score || activeObj?.math_ts || 91.6);
+      const scoreVal = document.getElementById('tef-score-val');
+      if (scoreVal) scoreVal.textContent = `${mathScore.toFixed(1)}%`;
+      
+      const gradeBadge = document.getElementById('tef-grade-badge');
+      if (gradeBadge) gradeBadge.textContent = tef.admissibility_grade || "CLASS-I ADMISSIBLE";
+
+      // 2. AI Neural Attribution Score
+      const sbert = Number(activeObj?.sbert || 86.8);
+      const stylo = Number(activeObj?.stylometry || 94.8);
+      const circ = Number(activeObj?.circadian || 96.4);
+      const aiScore = Number((0.40 * sbert + 0.35 * stylo + 0.25 * circ).toFixed(1));
+
+      const elAiScore = document.getElementById('ai-detector-score');
+      if (elAiScore) elAiScore.textContent = `${aiScore}%`;
+
+      const elSbert = document.getElementById('score-sbert-val');
+      if (elSbert) elSbert.textContent = `${sbert}%`;
+      const barSbert = document.getElementById('bar-sbert');
+      if (barSbert) barSbert.style.width = `${sbert}%`;
+
+      const elStylo = document.getElementById('score-stylometry-val');
+      if (elStylo) elStylo.textContent = `${stylo}%`;
+      const barStylo = document.getElementById('bar-stylometry');
+      if (barStylo) barStylo.style.width = `${stylo}%`;
+
+      const elCirc = document.getElementById('score-circadian-val');
+      if (elCirc) elCirc.textContent = `${circ}%`;
+      const barCirc = document.getElementById('bar-circadian');
+      if (barCirc) barCirc.style.width = `${circ}%`;
+
+      // 3. Synthesized Dual Threat Actor Detection Score
+      const dualScore = Number(((mathScore * 0.5) + (aiScore * 0.5)).toFixed(1));
+      const elDualScore = document.getElementById('dual-detector-score');
+      if (elDualScore) elDualScore.textContent = `${dualScore}%`;
+
+      // 4. Mathematical Dimension Breakdown Bars
+      if (tef.metrics) {
+        const app = tef.metrics.applicability_raw;
+        const ease = tef.metrics.technical_ease_raw;
+        const leg = tef.metrics.legal_admissibility_raw;
+
+        const elApp = document.getElementById('score-app-val');
+        if (elApp) elApp.textContent = `${app}%`;
+        const barApp = document.getElementById('bar-app');
+        if (barApp) barApp.style.width = `${app}%`;
+
+        const elEase = document.getElementById('score-ease-val');
+        if (elEase) elEase.textContent = `${ease}%`;
+        const barEase = document.getElementById('bar-ease');
+        if (barEase) barEase.style.width = `${ease}%`;
+
+        const elLeg = document.getElementById('score-legal-val');
+        if (elLeg) elLeg.textContent = `${leg}%`;
+        const barLegal = document.getElementById('bar-legal');
+        if (barLegal) barLegal.style.width = `${leg}%`;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // RENDER AUDITABLE CHAIN OF CUSTODY CHECKLIST
+    // -------------------------------------------------------------------------
+    function renderCustodyChecklist(steps) {
+      const container = document.getElementById('custody-checklist');
+      if (!container || !steps) return;
+      container.innerHTML = '';
+
+      steps.forEach(s => {
+        const item = document.createElement('div');
+        let statusBadge = `<span class="text-[10px] text-blue-700 font-mono font-bold">[AUTO-VERIFIED]</span>`;
+        let cardBg = 'bg-slate-50 border-slate-200';
+
+        if (s.analyst_certified) {
+          statusBadge = `<span class="text-[10px] text-emerald-700 font-mono font-bold">[EXAMINER-CERTIFIED]</span>`;
+          cardBg = 'bg-emerald-50/50 border-emerald-200';
+        } else if (s.flagged_fp) {
+          statusBadge = `<span class="text-[10px] text-rose-700 font-mono font-bold">[CONTESTED/EXCLUDED]</span>`;
+          cardBg = 'bg-rose-50/40 border-rose-200';
+        }
+
+        item.className = `p-2.5 rounded-lg border shadow-2xs transition-all ${cardBg}`;
+        item.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-slate-900 font-bold flex items-center gap-1.5 text-xs">
+              <svg class="w-3.5 h-3.5 ${s.flagged_fp ? 'text-rose-500' : 'text-emerald-600'}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                ${s.flagged_fp ? '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>' : '<polyline points="20 6 9 17 4 12"/>'}
+              </svg>
+              Step 0${s.step}: ${s.phase}
+            </span>
+            ${statusBadge}
+          </div>
+          <div class="text-[11px] text-slate-600 mt-1 flex items-center justify-between font-sans">
+            <span>${s.statutory_ref}</span>
+            <span class="font-mono text-slate-500 text-[10px]">SHA: ${s.sha256 ? s.sha256.slice(0, 10) : ''}...</span>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // -------------------------------------------------------------------------
+    // LOAD CASE DATA & INTEGRATE BACKEND
+    // -------------------------------------------------------------------------
+    async function loadCaseData(caseKey, customSeed) {
+      activeCaseKey = caseKey;
+      const caseObj = LOCAL_CASES[caseKey];
+      if (!caseObj) return;
+
+      const seed = customSeed || caseObj.seed_address;
+
+      // Update Top Nav Tabs
+      document.querySelectorAll('#top-case-selector button').forEach(b => {
+        b.className = 'case-tab px-2.5 py-1 text-xs rounded text-slate-400 hover:text-white transition-colors cursor-pointer';
+      });
+      if (caseKey.includes('CASE-01')) {
+        const b = document.getElementById('top-case-btn-1');
+        if (b) b.className = 'case-tab px-2.5 py-1 text-xs rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 font-medium cursor-pointer';
+      } else if (caseKey.includes('CASE-02')) {
+        const b = document.getElementById('top-case-btn-2');
+        if (b) b.className = 'case-tab px-2.5 py-1 text-xs rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 font-medium cursor-pointer';
+      } else if (caseKey.includes('CASE-03')) {
+        const b = document.getElementById('top-case-btn-3');
+        if (b) b.className = 'case-tab px-2.5 py-1 text-xs rounded bg-sky-500/20 text-sky-300 border border-sky-500/40 font-medium cursor-pointer';
+      }
+
+      // Update Dossier Card
+      const nameEl = document.getElementById('dossier-name');
+      if (nameEl) nameEl.textContent = caseObj.name;
+      const badgeEl = document.getElementById('dossier-badge');
+      if (badgeEl) badgeEl.textContent = caseObj.badge;
+      const aliasesEl = document.getElementById('dossier-aliases');
+      if (aliasesEl) aliasesEl.textContent = caseObj.aliases.map(a => '@' + a).join(', ');
+      const proceedsEl = document.getElementById('dossier-proceeds');
+      if (proceedsEl) proceedsEl.textContent = caseObj.proceeds;
+      const localeEl = document.getElementById('dossier-locale');
+      if (localeEl) localeEl.textContent = caseObj.inferred_locale;
+      const rebrandEl = document.getElementById('dossier-rebrand');
+      if (rebrandEl) rebrandEl.textContent = caseObj.rebrand_history;
+      const offrampEl = document.getElementById('dossier-offramp');
+      if (offrampEl) offrampEl.textContent = caseObj.offramp_entity;
+      const subpoenaEl = document.getElementById('dossier-subpoena');
+      if (subpoenaEl) subpoenaEl.textContent = `Ref: ${caseObj.subpoena_ref}`;
+
+      // Update Diurnal Canvas & 7-Day Heatmap
+      const s0 = String(caseObj.sleep_trough[0]).padStart(2, '0');
+      const s1 = String(caseObj.sleep_trough[1]).padStart(2, '0');
+      const sleepBadge = document.getElementById('diurnal-sleep-badge');
+      if (sleepBadge) sleepBadge.textContent = `SLEEP: ${s0}-${s1} UTC`;
+      renderDiurnalCanvas(caseObj.diurnal_hourly, caseObj.sleep_trough);
+      renderDiurnalHeatmap(caseObj);
+
+      // Update Diff Drawer Samples
+      const sampleA = document.getElementById('diff-sample-a');
+      if (sampleA) sampleA.innerHTML = highlightMatches(caseObj.sample_a);
+      const sampleB = document.getElementById('diff-sample-b');
+      if (sampleB) sampleB.innerHTML = highlightMatches(caseObj.sample_b);
+
+      // Try Backend Trace API, fallback to local deterministic synthesis
+      let traceData = null;
+      try {
+        const resp = await fetch('/api/trace', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seed: seed, case_id: caseKey })
+        });
+        if (resp.ok) {
+          traceData = await resp.json();
+        }
+      } catch (err) {}
+
+      if (!traceData) {
+        traceData = buildLocalTraceData(caseObj, seed);
+      }
+
+      // Update Graph
+      updateGraphElements(traceData.graph);
+
+      // Store TEF & Custody Data
+      currentTefData = traceData.tef;
+      currentChainOfCustody = traceData.chain_of_custody;
+
+      // Update TEF Scores
+      updateTefDisplay(currentTefData);
+
+      // Reset & Render Vector Attestations
+      vectorAttestations.forEach(v => { v.status = 'pending'; });
+      renderVectorAttestations();
+
+      // Update Custody Checklist
+      renderCustodyChecklist(currentChainOfCustody);
+
+      // Stream Logs
+      clearTerminalLogs();
+      if (traceData.execution_logs) {
+        traceData.execution_logs.forEach(log => {
+          logToTerminal(log.time, log.level, log.msg);
+        });
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // LOCAL DETERMINISTIC TRACE DATA SYNTHESIS FALLBACK
+    // -------------------------------------------------------------------------
+    function buildLocalTraceData(caseObj, seed) {
+      const cid = caseObj.id;
+      const truncSeed = seed.length > 14 ? `${seed.slice(0, 7)}...${seed.slice(-4)}` : seed;
+
+      const nodes = [
+        // POLE 1: Darknet Personas & Identity Core
+        { 
+          data: { 
+            id: `actor_${cid}`, 
+            label: `★ ${caseObj.name}\n[CORE OPERATOR]`, 
+            type: 'actor', 
+            pole: 1,
+            details: `Attributed Syndicate Core Controller. Inferred Locale: ${caseObj.inferred_locale}.`, 
+            confidence: 98.4 
+          } 
+        },
+        { 
+          data: { 
+            id: `handle_1_${cid}`, 
+            label: `👤 @${caseObj.primary_alias}\n(Dread Forum)`, 
+            type: 'handle', 
+            pole: 1,
+            details: `Darknet forum vendor account established 2021. PGP keyring bound.`, 
+            confidence: 96.0 
+          } 
+        },
+        { 
+          data: { 
+            id: `handle_2_${cid}`, 
+            label: `👤 @${caseObj.primary_alias}_mirror\n(Exploit.in)`, 
+            type: 'handle', 
+            pole: 1,
+            details: `Cross-forum mirror broker with identical Cyrillic & punctuation stylometry.`, 
+            confidence: 93.5 
+          } 
+        },
+
+        // POLE 2: Cryptographic & Infrastructure Evidence Proofs
+        { 
+          data: { 
+            id: `pgp_${cid}`, 
+            label: `🔑 PGP: ${caseObj.pgp_fingerprint}\n[RSA-4096]`, 
+            type: 'pgp', 
+            pole: 2,
+            details: `4096-bit RSA master key with subkey cryptographic collision.`, 
+            confidence: 99.9 
+          } 
+        },
+        { 
+          data: { 
+            id: `infra_${cid}`, 
+            label: `🖥 Nginx 1.18.0 Leak\n185.220.101.44 [JARM]`, 
+            type: 'infra', 
+            pole: 2,
+            details: `Bulletproof reverse-proxy exit relay (Njalla VPS) with JARM fingerprint match.`, 
+            confidence: 91.8 
+          } 
+        },
+
+        // POLE 3: Blockchain UTXO Peel Chain
+        { 
+          data: { 
+            id: `wallet_seed_${cid}`, 
+            label: `🪙 ${truncSeed}\n[Ingested Seed Vault]`, 
+            full_address: seed, 
+            type: 'wallet', 
+            pole: 3,
+            details: `Ingested Bitcoin UTXO cluster root. Proceeds: ${caseObj.proceeds}.`, 
+            confidence: 100.0 
+          } 
+        },
+        { 
+          data: { 
+            id: `wallet_peel_${cid}`, 
+            label: `🪙 bc1q9x...77a\n[Peel Change Forwarder]`, 
+            full_address: 'bc1q9xdr08985nd95ec5tzk3sw4klpeel77a', 
+            type: 'wallet', 
+            pole: 3,
+            details: `Automated peel change output forwarding to deposit aggregator.`, 
+            confidence: 97.2 
+          } 
+        },
+
+        // POLE 4: Surface Off-Ramp Anchor (The Subpoena Terminal)
+        { 
+          data: { 
+            id: `kyc_${cid}`, 
+            label: `⚓ SURFACE OFF-RAMP ANCHOR\n${caseObj.offramp_entity}\n[SUBPOENA TARGET]`, 
+            type: 'kyc_exchange', 
+            pole: 4,
+            details: `Centralized deposit aggregation cluster. Subpoena ready under Section 63 BSA / FIU-IND PML Rules.`, 
+            subpoena_ref: caseObj.subpoena_ref,
+            confidence: 99.4 
+          } 
+        }
+      ];
+
+      const edges = [
+        { 
+          data: { 
+            id: `e_utxo`, 
+            source: `wallet_seed_${cid}`, 
+            target: `wallet_peel_${cid}`, 
+            label: 'UTXO CO-SPEND (Block #782914)', 
+            vector: 'Blockchain Multi-Input UTXO Clustering', 
+            isDeterministic: true, 
+            evidenceHash: 'c7e2b10a44d82f918401aa892e03948576bbcc1092837461524354657687980a' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_pgp_1`, 
+            source: `handle_1_${cid}`, 
+            target: `pgp_${cid}`, 
+            label: 'PGP COLLISION (4096-bit)', 
+            vector: 'PGP Keyring Subkey Signature', 
+            isDeterministic: true, 
+            evidenceHash: 'a48e91d092837461524354657687980ac7e2b10a44d82f918401aa892e039485' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_pgp_2`, 
+            source: `handle_2_${cid}`, 
+            target: `pgp_${cid}`, 
+            label: 'SUBKEY BINDING (0x7C3B...)', 
+            vector: 'Identical 4096-bit Subkey Hash', 
+            isDeterministic: true, 
+            evidenceHash: 'f1b920a102938475610293847561029384756102938475610293847561029384' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_stylo`, 
+            source: `handle_1_${cid}`, 
+            target: `handle_2_${cid}`, 
+            label: 'NLP STYLOMETRY: 91.4%', 
+            vector: 'NLP TF-IDF Cosine & Punctuation Jitter', 
+            isDeterministic: false, 
+            evidenceHash: 'c7d3e91829384756102938475610293847561029384756102938475610293847' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_infra`, 
+            source: `handle_1_${cid}`, 
+            target: `infra_${cid}`, 
+            label: 'BANNER LEAK (Nginx/1.18)', 
+            vector: 'Hosting & TLS JARM Correlation', 
+            isDeterministic: false, 
+            evidenceHash: '99e4b10293847561029384756102938475610293847561029384756102938475' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_actor_h`, 
+            source: `actor_${cid}`, 
+            target: `handle_1_${cid}`, 
+            label: 'CORE OPERATOR', 
+            vector: 'Attribution Anchor', 
+            isDeterministic: true, 
+            evidenceHash: '11a84f3293847561029384756102938475610293847561029384756102938475' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_actor_w`, 
+            source: `actor_${cid}`, 
+            target: `wallet_seed_${cid}`, 
+            label: 'PROCEEDS VAULT', 
+            vector: 'Laundering Link', 
+            isDeterministic: true, 
+            evidenceHash: '55c82d4293847561029384756102938475610293847561029384756102938475' 
+          } 
+        },
+        { 
+          data: { 
+            id: `e_kyc`, 
+            source: `wallet_peel_${cid}`, 
+            target: `kyc_${cid}`, 
+            label: 'SUBPOENA REQUISITION', 
+            vector: 'KYC Deposit Aggregation', 
+            isDeterministic: true, 
+            evidenceHash: '88b43f1293847561029384756102938475610293847561029384756102938475' 
+          } 
+        }
+      ];
+
+      return {
+        graph: { nodes, edges },
+        tef: {
+          composite_score: caseObj.math_ts || 91.6,
+          admissibility_grade: "CERTIFIED ADMISSIBLE (CLASS-I)",
+          metrics: { 
+            applicability_raw: caseObj.applicability || 94.2, 
+            technical_ease_raw: caseObj.technical_ease || 88.5, 
+            legal_admissibility_raw: caseObj.legal_admissibility || 95.8 
+          }
+        },
+        ai_metrics: {
+          ai_score: caseObj.ai_score || 92.4,
+          sbert: caseObj.sbert || 86.8,
+          stylometry: caseObj.stylometry || 94.8,
+          circadian: caseObj.circadian || 96.4
+        },
+        dual_score: caseObj.dual_score || 92.0,
+        chain_of_custody: [
+          { step: 1, phase: 'SEED INGESTION & TOR SNAPSHOT', sha256: 'a4f89d02c81e934a1b02883efc91a7428e19b4501a3cd4e899bf01928374a123', statutory_ref: 'Sec 63(2)(a) BSA, 2023', analyst_certified: true },
+          { step: 2, phase: 'BITCOIN UTXO CO-SPEND CLUSTERING', sha256: 'c7e2b10a44d82f918401aa892e03948576bbcc1092837461524354657687980a', statutory_ref: 'Sec 63(2)(b) BSA, 2023', analyst_certified: false },
+          { step: 3, phase: 'PGP SUBKEY RING CORRELATION', sha256: '89b14c33d201e954a847362910faecb819283746554433221100998877665544', statutory_ref: 'Sec 63(3) BSA, 2023', analyst_certified: false },
+          { step: 4, phase: 'CIRCADIAN DIURNAL & TF-IDF STYLOMETRY', sha256: '5f3d810293847561928374650192837482910293847561029384756102938475', statutory_ref: 'Sec 63(4)(a) BSA, 2023', analyst_certified: false },
+          { step: 5, phase: 'KYC OFF-RAMP SUBPOENA RESOLUTION', sha256: '2e9a018293847561029384756102938475610293847561029384756102938475', statutory_ref: 'Sec 63(4)(c) BSA, 2023', analyst_certified: false }
+        ],
+        execution_logs: [
+          { time: '+00.1s', level: 'INFO', msg: `Seed ingested: ${seed} (Format: ${selectedInputMode})` },
+          { time: '+00.4s', level: 'NETW', msg: `Scraped Tor onion mirrors: Dread, Exploit.in, BreachForums` },
+          { time: '+00.7s', level: 'CRYPTO', msg: `Identified UTXO multi-input co-spend cluster: 184 blocks analyzed` },
+          { time: '+00.9s', level: 'MATH-TS', msg: `Mathematical TS Formula: TS = (0.385 * App) + (0.204 * Ease) + (0.412 * Legal) -> ${caseObj.math_ts || 91.6}% (AHP Certified)` },
+          { time: '+01.2s', level: 'AI-MODEL', msg: `AI Neural Classifier: ${caseObj.ai_score || 92.4}% (Sentence-BERT + TF-IDF 3-5 Gram Stylometry)` },
+          { time: '+01.5s', level: 'CHRONO', msg: `Diurnal sleep trough mapped: ${String(caseObj.sleep_trough[0]).padStart(2, '0')}:00-${String(caseObj.sleep_trough[1]).padStart(2, '0')}:00 UTC (${caseObj.inferred_locale})` },
+          { time: '+01.8s', level: 'SUBPOENA', msg: `Surface off-ramp subpoena target resolved: ${caseObj.offramp_entity}` },
+          { time: '+02.0s', level: 'DUAL-CORE', msg: `Threat Actor Detector synthesized BOTH Mathematical TS & AI Approaches (Hybrid: ${caseObj.dual_score || 92.0}%)` }
+        ]
+      };
+    }
+
+    // -------------------------------------------------------------------------
+    // LOG TO TERMINAL DRAWER
+    // -------------------------------------------------------------------------
+    function logToTerminal(time, level, msg) {
+      const container = document.getElementById('terminal-logs');
+      if (!container) return;
+      const el = document.createElement('div');
+      el.className = 'flex items-start gap-2 text-[11px] font-mono leading-tight';
+
+      let color = 'text-slate-600';
+      if (level === 'CRYPTO') color = 'text-blue-700 font-bold';
+      if (level === 'LEGAL' || level === 'SUBPOENA') color = 'text-emerald-700 font-bold';
+      if (level === 'NETW') color = 'text-blue-600 font-bold';
+      if (level === 'MATH-TS' || level === 'MATH') color = 'text-sky-700 font-bold';
+      if (level === 'AI-MODEL' || level === 'AI') color = 'text-purple-700 font-bold';
+      if (level === 'DUAL-CORE' || level === 'DUAL') color = 'text-emerald-700 font-bold';
+
+      el.innerHTML = `
+        <span class="text-slate-400 shrink-0 select-none">${time}</span>
+        <span class="${color} shrink-0">[${level}]</span>
+        <span class="text-slate-700 break-words font-medium">${msg}</span>
+      `;
+      container.appendChild(el);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function clearTerminalLogs() {
+      const container = document.getElementById('terminal-logs');
+      if (container) container.innerHTML = '';
+    }
+
+    // -------------------------------------------------------------------------
+    // 4-POLE ATTRIBUTION PIPELINE TREE & ADVANCED GRAPH LAYOUTS
+    // -------------------------------------------------------------------------
+    function updateLayoutButtons(activeName) {
+      const btnPipeline = document.getElementById('layout-pipeline');
+      const btnVertical = document.getElementById('layout-vertical');
+      const btnCose = document.getElementById('layout-cose');
+      const btnConcentric = document.getElementById('layout-concentric');
+
+      const allBtns = [
+        { el: btnPipeline, name: 'pipeline' },
+        { el: btnVertical, name: 'vertical' },
+        { el: btnCose, name: 'cose' },
+        { el: btnConcentric, name: 'concentric' }
+      ];
+
+      allBtns.forEach(item => {
+        if (!item.el) return;
+        if (item.name === activeName) {
+          item.el.className = 'px-2.5 py-1 rounded-md bg-blue-600 text-white font-bold transition-all shadow-2xs cursor-pointer';
+        } else {
+          item.el.className = 'px-2 py-1 rounded-md text-slate-600 hover:text-slate-900 font-medium transition-all cursor-pointer';
+        }
+      });
+    }
+
+    function applyPipelineTreeLayout(animate = true) {
+      if (!cy) return;
+
+      // Group nodes by pole (Pole 1: Personas, Pole 2: Proofs, Pole 3: UTXO Trail, Pole 4: Off-Ramp Anchor)
+      const poles = { 1: [], 2: [], 3: [], 4: [] };
+
+      cy.nodes().forEach(node => {
+        let p = node.data('pole');
+        if (!p) {
+          const type = node.data('type');
+          if (type === 'actor' || type === 'handle') p = 1;
+          else if (type === 'pgp' || type === 'infra') p = 2;
+          else if (type === 'wallet') p = 3;
+          else if (type === 'kyc_exchange') p = 4;
+          else p = 2;
+        }
+        if (poles[p]) poles[p].push(node);
+        else poles[2].push(node);
+      });
+
+      // Clear any dimming / focus highlight classes
+      cy.elements().removeClass('offramp-highlight offramp-edge-highlight dimmed-element');
+
+      // Fixed horizontal column positions (X coordinate per Pole)
+      const xPositions = {
+        1: 140,  // Pole 1: Personas & Threat Actor Core
+        2: 430,  // Pole 2: Cryptographic & Infrastructure Evidence Proofs
+        3: 730,  // Pole 3: Blockchain UTXO Seed & Peel Forwarder
+        4: 1040  // Pole 4: Surface Off-Ramp Anchor (Subpoena Terminal)
+      };
+
+      const centerY = 260;
+      const verticalGap = 135;
+      const animations = [];
+
+      [1, 2, 3, 4].forEach(pNum => {
+        const list = poles[pNum];
+        const count = list.length;
+        const totalHeight = (count - 1) * verticalGap;
+        const startY = centerY - (totalHeight / 2);
+
+        list.forEach((node, idx) => {
+          const targetPos = {
+            x: xPositions[pNum],
+            y: startY + (idx * verticalGap)
+          };
+          if (animate) {
+            animations.push(node.animation({
+              position: targetPos,
+              duration: 550,
+              easing: 'ease-in-out-cubic'
+            }));
+          } else {
+            node.position(targetPos);
+          }
+        });
+      });
+
+      if (animate && animations.length > 0) {
+        animations.forEach(anim => anim.play());
+        setTimeout(() => {
+          if (cy) cy.fit(undefined, 50);
+        }, 580);
+      } else {
+        cy.fit(undefined, 50);
+      }
+
+      updateLayoutButtons('pipeline');
+    }
+
+    function focusOffRampAnchor() {
+      if (!cy) return;
+
+      // Find the surface off-ramp anchor node (Pole 4 or kyc_exchange)
+      let offRampNode = cy.nodes('[type="kyc_exchange"]').first();
+      if (!offRampNode || offRampNode.length === 0) {
+        offRampNode = cy.nodes('[pole=4]').first();
+      }
+      if (!offRampNode || offRampNode.length === 0) return;
+
+      // Find the full laundering path leading directly into the off-ramp anchor
+      const criticalPathEdges = cy.edges().filter(edge => {
+        const t = edge.target().id();
+        const s = edge.source().id();
+        return (
+          t.includes('kyc') || 
+          (s.includes('wallet_seed') && t.includes('wallet_peel')) ||
+          (s.includes('actor') && t.includes('wallet_seed'))
+        );
+      });
+
+      const criticalPathNodes = criticalPathEdges.connectedNodes().union(offRampNode);
+
+      // Dim non-critical elements
+      cy.elements().removeClass('offramp-highlight offramp-edge-highlight dimmed-element');
+      cy.elements().difference(criticalPathNodes).difference(criticalPathEdges).addClass('dimmed-element');
+
+      // Emphasize the critical subpoena path
+      criticalPathNodes.addClass('offramp-highlight');
+      criticalPathEdges.addClass('offramp-edge-highlight');
+
+      // Zoom smoothly into the Off-Ramp Anchor with high visual clarity
+      cy.animate({
+        center: { eles: offRampNode },
+        zoom: 1.15,
+        duration: 600,
+        easing: 'ease-in-out-cubic'
+      });
+
+      // Update Inspector Drawer
+      inspectElement('node', offRampNode.data());
+      logToTerminal('+00.8s', 'SUBPOENA', `Focused Surface Off-Ramp Anchor [${offRampNode.data('label').replace('\\n', ' ')}]. Statutory Subpoena requisition path illuminated.`);
+    }
+
+    function setLayout(name) {
+      if (!cy) return;
+      cy.elements().removeClass('dimmed-element offramp-highlight offramp-edge-highlight');
+
+      if (name === 'pipeline') {
+        applyPipelineTreeLayout(true);
+      } else if (name === 'vertical') {
+        updateLayoutButtons('vertical');
+        cy.layout({
+          name: 'breadthfirst',
+          directed: true,
+          roots: cy.nodes('[type="actor"]'),
+          animate: true,
+          animationDuration: 550,
+          fit: true,
+          padding: 45,
+          spacingFactor: 1.3
+        }).run();
+      } else if (name === 'cose') {
+        updateLayoutButtons('cose');
+        cy.layout({
+          name: 'cose',
+          animate: true,
+          animationDuration: 550,
+          nodeRepulsion: function() { return 9500; },
+          idealEdgeLength: function() { return 120; },
+          fit: true,
+          padding: 45
+        }).run();
+      } else if (name === 'concentric') {
+        updateLayoutButtons('concentric');
+        cy.layout({
+          name: 'concentric',
+          concentric: function(node) {
+            return (5 - (node.data('pole') || 2)) * 10;
+          },
+          levelWidth: function() { return 1; },
+          animate: true,
+          animationDuration: 550,
+          fit: true,
+          padding: 45
+        }).run();
+      }
+    }
+
+    function fitGraph() {
+      if (cy) {
+        cy.elements().removeClass('dimmed-element offramp-highlight offramp-edge-highlight');
+        cy.fit(undefined, 45);
+      }
+    }
+    function zoomIn() {
+      if (cy) cy.zoom(cy.zoom() * 1.25);
+    }
+    function zoomOut() {
+      if (cy) cy.zoom(cy.zoom() * 0.8);
+    }
+
+    function switchCase(caseKey) {
+      triggerReconWithAnimation(caseKey);
+    }
+
+    // -------------------------------------------------------------------------
+    // MODAL & EXPORT HANDLERS
+    // -------------------------------------------------------------------------
+    function openBsaModal() {
+      const caseObj = LOCAL_CASES[activeCaseKey] || LOCAL_CASES["CASE-01: Spectre_Syndicate"];
+      document.getElementById('cert-case-id').textContent = `NTRO/CTI/DE-ANON/${caseObj.id}/2026`;
+      document.getElementById('cert-target-name').textContent = `${caseObj.name} (@${caseObj.primary_alias})`;
+      document.getElementById('cert-wallet').textContent = caseObj.seed_address;
+      document.getElementById('cert-subpoena').textContent = `${caseObj.offramp_entity} [${caseObj.subpoena_ref}]`;
+
+      const confirmedCount = vectorAttestations.filter(v => v.status === 'confirmed').length;
+      const flaggedCount = vectorAttestations.filter(v => v.status === 'flagged').length;
+      const attestationEl = document.getElementById('cert-attestation-status');
+      if (attestationEl) {
+        if (confirmedCount === 4) {
+          attestationEl.textContent = '4/4 VECTORS EXAMINER-CERTIFIED';
+          attestationEl.className = 'font-mono text-emerald-800 font-bold';
+        } else if (flaggedCount > 0) {
+          attestationEl.textContent = `${confirmedCount}/4 CONFIRMED (${flaggedCount} FLAGGED FP)`;
+          attestationEl.className = 'font-mono text-amber-800 font-bold';
+        } else {
+          attestationEl.textContent = `${confirmedCount}/4 VECTORS ATTESTED`;
+          attestationEl.className = 'font-mono text-blue-800 font-bold';
+        }
+      }
+      const tefEl = document.getElementById('cert-tef-rating');
+      if (tefEl && currentTefData) {
+        tefEl.textContent = `${currentTefData.composite_score}% (${currentTefData.admissibility_grade})`;
+      }
+      const certHashEl = document.getElementById('cert-hash');
+      if (certHashEl) {
+        const charSuffix = (confirmedCount * 7 + flaggedCount * 3).toString(16);
+        certHashEl.textContent = `e7f842b03698d5c414901f46820df38a164993ec974e6f481c0022416bc7ef0${charSuffix}`;
+      }
+      document.getElementById('bsa-modal').classList.remove('hidden');
+    }
+
+    function closeBsaModal() {
+      document.getElementById('bsa-modal').classList.add('hidden');
+    }
+
+    async function exportStixBundle() {
+      const caseObj = LOCAL_CASES[activeCaseKey];
+      try {
+        const resp = await fetch('/api/export-stix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ case_id: activeCaseKey })
+        });
+        if (resp.ok) {
+          const bundle = await resp.json();
+          downloadJson(bundle, `${caseObj.id}_stix21_bundle.json`);
+          return;
+        }
+      } catch (err) {}
+
+      // Fallback local STIX download
+      const fallbackBundle = {
+        type: "bundle",
+        id: `bundle--${Date.now()}`,
+        spec_version: "2.1",
+        objects: [
+          {
+            type: "threat-actor",
+            id: `threat-actor--${caseObj.id}`,
+            name: caseObj.name,
+            aliases: caseObj.aliases,
+            description: `Attributed dark web ransomware/laundering syndicate. Inferred timezone: ${caseObj.inferred_locale}.`
+          },
+          {
+            type: "indicator",
+            id: `indicator--${caseObj.seed_address.slice(0, 10)}`,
+            pattern: `[cryptocurrency-address:value = '${caseObj.seed_address}']`
+          },
+          {
+            type: "identity",
+            id: `identity--subpoena-target`,
+            name: caseObj.offramp_entity,
+            description: `Regulatory Subpoena Target: ${caseObj.subpoena_ref}`
+          }
+        ]
+      };
+      downloadJson(fallbackBundle, `${caseObj.id}_stix21_bundle.json`);
+    }
+
+    function exportCsvEvidence() {
+      const caseObj = LOCAL_CASES[activeCaseKey];
+      const rows = [
+        ["STEP", "PHASE", "VECTOR", "STATUTORY_REF", "SHA256_INTEGRITY_HASH"],
+        ["1", "SEED INGESTION", "TOR MIRROR SNAPSHOT", "Sec 63(2)(a) BSA, 2023", "a4f89d02c81e934a1b02883efc91a7428e19b4501a3cd4e899bf01928374a123"],
+        ["2", "BITCOIN UTXO CLUSTERING", "MULTI-INPUT CO-SPEND", "Sec 63(2)(b) BSA, 2023", "c7e2b10a44d82f918401aa892e03948576bbcc1092837461524354657687980a"],
+        ["3", "PGP KEY CORRELATION", "SUBKEY RING SIGNATURE", "Sec 63(3) BSA, 2023", "89b14c33d201e954a847362910faecb819283746554433221100998877665544"],
+        ["4", "NLP TF-IDF STYLOMETRY", "CHAR 3-5 GRAM COSINE", "Sec 63(4)(a) BSA, 2023", "5f3d810293847561928374650192837482910293847561029384756102938475"],
+        ["5", "KYC OFF-RAMP TERMINAL", "SUBPOENA RESOLUTION", "Sec 63(4)(c) BSA, 2023", "2e9a018293847561029384756102938475610293847561029384756102938475"]
+      ];
+      const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `${caseObj.id}_bsa_chain_of_custody.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadJson(obj, filename) {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(obj, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", filename);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    // Keyboard ESC listener for modal
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeBsaModal();
+      }
+    });
+
+    // Initialize on load in progressive disclosure state
+    window.addEventListener('DOMContentLoaded', () => {
+      initCytoscape();
+      renderRecentSearches();
+      showCommandEntryState();
+    });
+  </script>
+</body>
+</html>

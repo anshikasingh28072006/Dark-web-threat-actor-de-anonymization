@@ -1,0 +1,7 @@
+{
+  "name": "NTRO De-Anonymization Console",
+  "description": "Dark Web Threat Actor De-Anonymization and cyber intelligence platform with stylometric analysis, diurnal posting curves, Cytoscape knowledge graphs, TEF scoring, and STIX 2.1 export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
