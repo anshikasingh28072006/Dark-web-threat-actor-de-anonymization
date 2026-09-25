@@ -53,19 +53,19 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
     ```cp .env.example .env```
 
 3. **Install frontend dependencies:**
-    npm install
+    ```npm install```
     # or
-    bun install
+    ```bun install```
 
 4. **Install backend dependencies:**
-    pip install -r requirements.txt
+    ```pip install -r requirements.txt```
 
 5. **Run the development servers:**
     # Start Python backend service
-    python backend.py
+    ```python backend.py```
 
     # Start frontend interface
-    npm run dev
+    ```npm run dev```
 
 ---
 
