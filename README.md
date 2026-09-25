@@ -61,10 +61,11 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
     ```pip install -r requirements.txt```
 
 5. **Run the development servers:**
-     **Start Python backend service**
+ 
+     **Start Python backend service** :-
     ```python backend.py```
 
-     **Start frontend interface**
+     **Start frontend interface** :-
     ```npm run dev```
 
 
