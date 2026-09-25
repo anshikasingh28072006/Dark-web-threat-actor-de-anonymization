@@ -50,7 +50,7 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
    cd Dark-web-threat-actor-de-anonymization
 
 2. **Setup environment variables:**
-    ```cp .env.example .env
+    ```cp .env.example .env```
 
 3. **Install frontend dependencies:**
     npm install
