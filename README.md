@@ -73,9 +73,9 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
 
 This tool is designed strictly for authorized cyber threat intelligence (CTI), law enforcement investigations, and institutional security research. All network interactions are performed through isolated proxies, and evidence data structures are cryptographically hashed to ensure integrity throughout the chain of custody.
 
-## 🚀 Live Prototype & Platform Walkthrough
+##  Live Prototype & Platform Walkthrough
 
-> 🔗 **Live Demo:** [Launch Interactive Dashboard](https://dark-web-threat-actor-de-anonymization.vercel.app)
+>  **Live Demo:** https://dark-web-threat-actor-de-anonymizat.vercel.app/
 
 ---
 
