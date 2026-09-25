@@ -23,3 +23,28 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
 ##  Forensic Pipeline
 <img width="1143" height="1376" alt="ChatGPT Image Sep 26, 2026, 01_24_19 AM" src="https://github.com/user-attachments/assets/1102cd32-7df8-4838-aa64-edf50f754fb3" />
 
+
+##  Research & Scientific Baselines
+
+1. **Kainz et al. (2026):** *De-Anonymization Techniques in the Tor Network Using an Experimental Testbed* — Baseline for practical Tor infrastructure and endpoint exposure.
+2. **Wangchuk & Rathod (2023):** *Open Source Intelligence and Dark Web User De-Anonymisation (Dark2Clear)* — Framework for automated harvesting and cross-platform OSINT correlation.
+3. **Shin & Shin (2026):** *A Vulnerability Taxonomy for Tor-Based Hidden Services: Toward a De-Anonymization Framework for Cybercrime Investigation* — Multi-criteria decision model prioritizing legal admissibility ($L = 41.2\%$).
+4. **Statutory Admissibility:** Native automated evidence hashing aligned with Section 63 of the Bharatiya Sakshya Adhiniyam (BSA), 2023.
+
+---
+
+##  Getting Started
+
+### Prerequisites
+
+* Node.js (v18+) or Bun
+* Python 3.10+
+* Git
+
+### Installation
+
+1. **Clone the repository:**
+   ```bash
+   git clone [https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git](https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git)
+   cd Dark-web-threat-actor-de-anonymization
+
