@@ -84,7 +84,7 @@ This tool is designed strictly for authorized cyber threat intelligence (CTI), l
 
 ##  Live Prototype & Platform Walkthrough
 
- **Live Demo:** [Launch Interactive Dashboard](https://dark-web-threat-actor-de-anonymization.vercel.app)
+ **Live Demo:** https://dark-web-threat-actor-de-anonymizat.vercel.app/
 
 ---
 
