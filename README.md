@@ -44,30 +44,29 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
 ### Installation
 
 1. **Clone the repository:**
-   git clone https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git
-   cd Dark-web-threat-actor-de-anonymization
+    git clone https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git
+    cd Dark-web-threat-actor-de-anonymization
 
 2. **Setup environment variables:**
-   cp .env.example .env
+    cp .env.example .env
 
 3. **Install frontend dependencies:**
-   npm install
-   # or
-   bun install
+    npm install
+    # or
+    bun install
 
 4. **Install backend dependencies:**
-   pip install -r requirements.txt
+    pip install -r requirements.txt
 
 5. **Run the development servers:**
-   # Start Python backend service
-   python backend.py
+    # Start Python backend service
+    python backend.py
 
-   # Start frontend interface
-   npm run dev
+    # Start frontend interface
+    npm run dev
 
 ---
 
 ## 🔒 Security & Compliance
 
 This tool is designed strictly for authorized cyber threat intelligence (CTI), law enforcement investigations, and institutional security research. All network interactions are performed through isolated proxies, and evidence data structures are cryptographically hashed to ensure integrity throughout the chain of custody.
-```[cite: 1, 2]
