@@ -50,17 +50,18 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
    cd Dark-web-threat-actor-de-anonymization
 
 2. **Setup environment variables:**
-    ```bash cp .env.example .env```
+    ```bash
+   cp .env.example .env```
 
-3. **Install frontend dependencies:**
+4. **Install frontend dependencies:**
     ```npm install```
     or
     ```bun install```
 
-4. **Install backend dependencies:**
+5. **Install backend dependencies:**
     ```pip install -r requirements.txt```
 
-5. **Run the development servers:**
+6. **Run the development servers:**
  
      **Start Python backend service** :-
     ```python backend.py```
