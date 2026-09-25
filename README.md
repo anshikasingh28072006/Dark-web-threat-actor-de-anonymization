@@ -40,15 +40,17 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
 * Node.js (v18+) or Bun
 * Python 3.10+
 * Git
-
 ### Installation
 
 1. **Clone the repository:**
-    git clone https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git
-    cd Dark-web-threat-actor-de-anonymization
+
+   Open your terminal and run:
+   ```bash
+   git clone [https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git](https://github.com/anshikasingh28072006/Dark-web-threat-actor-de-anonymization.git)
+   cd Dark-web-threat-actor-de-anonymization
 
 2. **Setup environment variables:**
-    cp .env.example .env
+    ```cp .env.example .env
 
 3. **Install frontend dependencies:**
     npm install
