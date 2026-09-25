@@ -51,23 +51,28 @@ An end-to-end cyber-forensics platform engineered to unmask anonymous threat act
 
 2. **Setup environment variables:**
     ```bash
-   cp .env.example .env```
+   cp .env.example .env
 
 4. **Install frontend dependencies:**
-    ```npm install```
+```bash
+   npm install
     or
-    ```bun install```
+    ```bash
+bun install
 
-5. **Install backend dependencies:**
-    ```pip install -r requirements.txt```
+6. **Install backend dependencies:**
+    ```bash
+pip install -r requirements.txt
 
-6. **Run the development servers:**
+7. **Run the development servers:**
  
      **Start Python backend service** :-
-    ```python backend.py```
+    ```bash
+python backend.py
 
      **Start frontend interface** :-
-    ```npm run dev```
+    ```bash
+npm run dev
 
 
 ##  Security & Compliance
